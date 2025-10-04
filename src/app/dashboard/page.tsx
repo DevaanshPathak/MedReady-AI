@@ -2,10 +2,13 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Brain, BarChart3, BookOpen, Target, TrendingUp, Award, Clock } from 'lucide-react'
+import { Brain, BarChart3, BookOpen, Target, TrendingUp, Award, Clock, LogOut, User } from 'lucide-react'
+import ProtectedRoute from '@/components/ProtectedRoute'
+import { useAuth } from '@/lib/auth-context'
 
-export default function DashboardPage() {
+function DashboardContent() {
   const router = useRouter()
+  const { user, signOut } = useAuth()
   
   // Mock data - in a real app, this would come from the database
   const [stats] = useState({
@@ -27,21 +30,40 @@ export default function DashboardPage() {
     ],
   })
 
+  const handleSignOut = async () => {
+    await signOut()
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center space-x-2">
-            <Brain className="w-8 h-8 text-primary-600" />
-            <h1 className="text-2xl font-bold text-gray-900">MedReady AI</h1>
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-2 rounded-xl shadow-lg">
+              <Brain className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              MedReady AI
+            </h1>
           </div>
-          <div className="space-x-4">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-lg shadow border border-gray-100">
+              <User className="w-5 h-5 text-gray-600" />
+              <span className="text-sm font-medium text-gray-700">{user?.email}</span>
+            </div>
             <button
               onClick={() => router.push('/quiz')}
-              className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium"
+              className="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
               Start Quiz
+            </button>
+            <button
+              onClick={handleSignOut}
+              className="px-4 py-2 bg-white/80 backdrop-blur-sm text-gray-700 rounded-lg hover:bg-white transition font-medium shadow border border-gray-200 flex items-center gap-2"
+            >
+              <LogOut className="w-4 h-4" />
+              Sign Out
             </button>
           </div>
         </div>
@@ -186,5 +208,13 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function DashboardPage() {
+  return (
+    <ProtectedRoute>
+      <DashboardContent />
+    </ProtectedRoute>
   )
 }

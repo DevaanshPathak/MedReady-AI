@@ -7,7 +7,7 @@ This guide will help you deploy MedReady AI to production in minutes.
 Before deploying, ensure you have:
 - ✅ A Vercel account (free tier works perfectly)
 - ✅ A Supabase account with a new project created
-- ✅ An OpenAI API key
+- ✅ An OpenAI API key OR Vercel AI Gateway access
 - ✅ This repository forked/cloned to your GitHub account
 
 ## Step 1: Set Up Supabase
@@ -42,9 +42,21 @@ Before deploying, ensure you have:
 
 1. Go to **Authentication** → **Providers**
 2. Enable **Email** provider
-3. Optional: Customize email templates in **Email Templates**
+3. **Optional**: Enable **Google OAuth**:
+   - Go to Google Cloud Console
+   - Create OAuth credentials
+   - Add authorized redirect URI: `https://your-project.supabase.co/auth/v1/callback`
+   - Copy Client ID and Secret to Supabase
+4. **Optional**: Enable **GitHub OAuth**:
+   - Go to GitHub Settings → Developer Settings → OAuth Apps
+   - Create new OAuth App
+   - Add callback URL: `https://your-project.supabase.co/auth/v1/callback`
+   - Copy Client ID and Secret to Supabase
+5. Customize email templates in **Email Templates** (optional)
 
-## Step 2: Get OpenAI API Key
+## Step 2: Get AI Provider Access
+
+### Option A: OpenAI (Direct)
 
 1. Go to [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys)
 2. Sign in or create an account
@@ -52,6 +64,16 @@ Before deploying, ensure you have:
 4. Name it "MedReady-AI"
 5. Copy the key (you won't see it again!)
 6. Add credits to your OpenAI account ($5-10 is plenty to start)
+
+### Option B: Vercel AI Gateway
+
+1. Go to your Vercel dashboard
+2. Navigate to Storage → AI
+3. Set up AI Gateway following Vercel's documentation
+4. Copy your gateway URL
+5. This allows you to monitor, cache, and control your AI API usage
+
+**Note**: Choose one option based on your needs. Vercel AI Gateway provides additional features like caching, rate limiting, and analytics.
 
 ## Step 3: Deploy to Vercel
 
@@ -67,16 +89,28 @@ Before deploying, ensure you have:
 
 In the "Configure Project" screen, add these environment variables:
 
+**For OpenAI (Direct):**
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGc...your-anon-key
+AI_PROVIDER=openai
+OPENAI_API_KEY=sk-...your-openai-key
+```
+
+**For Vercel AI Gateway:**
+```
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGc...your-anon-key
+AI_PROVIDER=vercel
+VERCEL_AI_GATEWAY_URL=your-gateway-url
 OPENAI_API_KEY=sk-...your-openai-key
 ```
 
 **Important**: 
 - Replace the values with your actual keys from Steps 1 and 2
 - Make sure `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` start with `NEXT_PUBLIC_`
-- The `OPENAI_API_KEY` should NOT have the `NEXT_PUBLIC_` prefix
+- The `OPENAI_API_KEY` and `AI_PROVIDER` should NOT have the `NEXT_PUBLIC_` prefix
+- Set `AI_PROVIDER` to either `openai` or `vercel` depending on your choice
 
 ### 3.3 Deploy
 
@@ -155,7 +189,9 @@ OPENAI_API_KEY=sk-...your-openai-key
 |----------|----------|--------|-------------|
 | `NEXT_PUBLIC_SUPABASE_URL` | ✅ Yes | ✅ Yes | Your Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ Yes | ✅ Yes | Your Supabase anonymous key |
+| `AI_PROVIDER` | ✅ Yes | ❌ No | AI provider to use: `openai` or `vercel` |
 | `OPENAI_API_KEY` | ✅ Yes | ❌ No | Your OpenAI API key |
+| `VERCEL_AI_GATEWAY_URL` | ⚠️ Conditional | ❌ No | Required when `AI_PROVIDER=vercel` |
 
 ## Performance Optimization
 

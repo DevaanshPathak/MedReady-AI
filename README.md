@@ -9,25 +9,30 @@ An AI-powered exam preparation assistant for medical students, providing persona
 
 ## 🚀 Features
 
-- **AI-Generated MCQs**: Personalized multiple-choice questions powered by OpenAI GPT-3.5
+- **AI-Generated MCQs**: Personalized multiple-choice questions powered by OpenAI GPT-3.5 or Vercel AI Gateway
 - **Adaptive Learning**: Intelligent question targeting based on weak areas
 - **Real-Time Analytics**: Track your progress with detailed performance insights
-- **User Authentication**: Secure signup and login with Supabase Auth
+- **Enhanced Authentication**: Secure signup/login with email, Google OAuth, and GitHub OAuth via Supabase
+- **Password Reset**: Easy password recovery via email
+- **Session Management**: Automatic session handling with protected routes
 - **Performance Dashboard**: Visual representation of your learning progress
 - **Topic-Based Practice**: Focus on specific medical topics
 - **Difficulty Levels**: Choose from easy, medium, or hard questions
 - **Detailed Explanations**: Comprehensive answers to help you understand concepts
 - **Progress Tracking**: Monitor accuracy, streaks, and time spent
+- **Modern UI/UX**: Beautiful gradient designs, smooth transitions, and toast notifications
+- **Responsive Design**: Works seamlessly on mobile, tablet, and desktop
 
 ## 🛠️ Tech Stack
 
 - **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS
 - **Backend**: Next.js API Routes
 - **Database**: Supabase (PostgreSQL)
-- **Authentication**: Supabase Auth
-- **AI**: OpenAI GPT-3.5 Turbo
+- **Authentication**: Supabase Auth with OAuth (Google, GitHub) and email/password
+- **AI**: OpenAI GPT-3.5 Turbo or Vercel AI Gateway
 - **UI Components**: Lucide React Icons
 - **Charts**: Recharts (for analytics visualization)
+- **State Management**: React Context API for auth
 - **Deployment**: Vercel
 
 ## 📋 Prerequisites
@@ -54,10 +59,21 @@ Before you begin, ensure you have the following installed:
    
    Create a `.env.local` file in the root directory:
    ```env
+   # Supabase Configuration
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   
+   # AI Provider Configuration
+   AI_PROVIDER=openai  # or 'vercel' for Vercel AI Gateway
+   
+   # OpenAI Configuration (when AI_PROVIDER=openai)
    OPENAI_API_KEY=your_openai_api_key
+   
+   # Vercel AI Gateway Configuration (when AI_PROVIDER=vercel)
+   VERCEL_AI_GATEWAY_URL=your_vercel_gateway_url
    ```
+   
+   **Note**: You can choose between OpenAI directly or Vercel AI Gateway by setting the `AI_PROVIDER` variable.
 
 4. **Set up Supabase Database**
    

@@ -28,7 +28,7 @@ export function MedReadyLogo({ className, showText = true, size = "md" }: MedRea
           src="/medready.png"
           alt="MedReady AI Logo"
           fill
-          className="object-contain"
+          className="object-contain rounded-none"
           priority
         />
       </div>

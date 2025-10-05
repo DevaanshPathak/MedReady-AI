@@ -50,6 +50,7 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
       title: string
       url: string
       publishedDate?: string
+      domain?: string
     }>
     toolCalls?: number
     created_at: string
@@ -317,19 +318,8 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
                     className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
                   >
                     {message.role === "assistant" && (
-                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-green-500">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="h-4 w-4 text-white"
-                        >
-                          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                        </svg>
+                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-blue-600 to-green-500">
+                        <MedReadyLogo size="sm" showText={false} className="h-4 w-4" />
                       </div>
                     )}
                     <div
@@ -413,38 +403,64 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
                             ? "border-blue-300/30" 
                             : "border-border"
                         }`}>
-                          <div className={`text-xs font-semibold mb-2 flex items-center gap-1 ${
+                          <div className={`text-xs font-semibold mb-3 flex items-center gap-1 ${
                             message.role === "user" 
                               ? "text-blue-200" 
                               : "text-muted-foreground"
                           }`}>
                             📚 Sources ({message.citations.length}):
                           </div>
-                          <div className="space-y-2">
+                          <div className="flex flex-wrap gap-2">
                             {message.citations.map((citation, index) => (
-                              <div key={index} className="text-xs">
-                                <a 
-                                  href={citation.url} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className={`underline hover:no-underline transition-colors ${
-                                    message.role === "user" 
-                                      ? "text-blue-200 hover:text-white" 
-                                      : "text-blue-600 hover:text-blue-800"
-                                  }`}
-                                >
-                                  {index + 1}. {citation.title}
-                                </a>
-                                {citation.publishedDate && (
-                                  <span className={`ml-2 ${
-                                    message.role === "user" 
-                                      ? "text-blue-300/70" 
-                                      : "text-muted-foreground"
-                                  }`}>
-                                    ({new Date(citation.publishedDate).toLocaleDateString()})
+                              <a 
+                                key={index}
+                                href={citation.url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className={`group inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs transition-all duration-200 hover:scale-105 hover:shadow-sm ${
+                                  message.role === "user" 
+                                    ? "border-blue-300/40 bg-blue-500/10 text-blue-200 hover:bg-blue-500/20 hover:border-blue-300/60" 
+                                    : "border-border bg-muted/50 text-foreground hover:bg-muted hover:border-border/80"
+                                }`}
+                                title={citation.title}
+                              >
+                                <div className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
+                                  message.role === "user" 
+                                    ? "bg-blue-400/20 text-blue-200" 
+                                    : "bg-primary/10 text-primary"
+                                }`}>
+                                  {index + 1}
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="font-medium truncate max-w-[200px]">
+                                    {citation.title.length > 30 
+                                      ? citation.title.substring(0, 30) + "..." 
+                                      : citation.title
+                                    }
                                   </span>
-                                )}
-                              </div>
+                                  {citation.publishedDate && (
+                                    <span className={`text-[10px] ${
+                                      message.role === "user" 
+                                        ? "text-blue-300/70" 
+                                        : "text-muted-foreground"
+                                    }`}>
+                                      {new Date(citation.publishedDate).toLocaleDateString()}
+                                    </span>
+                                  )}
+                                </div>
+                                <svg 
+                                  className={`h-3 w-3 opacity-60 group-hover:opacity-100 transition-opacity ${
+                                    message.role === "user" 
+                                      ? "text-blue-200" 
+                                      : "text-muted-foreground"
+                                  }`} 
+                                  fill="none" 
+                                  stroke="currentColor" 
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                              </a>
                             ))}
                           </div>
                         </div>
@@ -471,19 +487,8 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
                 ))}
                 {isLoading && (
                   <div className="flex gap-3">
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-green-500">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="h-4 w-4 text-white animate-pulse"
-                      >
-                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                      </svg>
+                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-blue-600 to-green-500">
+                      <MedReadyLogo size="sm" showText={false} className="h-4 w-4 animate-pulse" />
                     </div>
                     <div className="flex items-center gap-1 rounded-lg bg-card border border-border/50 px-4 py-3 shadow-sm">
                       <div className="h-2 w-2 animate-bounce rounded-full bg-blue-600 [animation-delay:-0.3s]" />

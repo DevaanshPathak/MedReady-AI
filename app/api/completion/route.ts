@@ -265,9 +265,10 @@ Please search for current information and provide a detailed, structured respons
           const citations = toolResults?.flatMap(result => {
             if (result.toolName === 'medicalWebSearch' && Array.isArray(result)) {
               return result.map((item: any) => ({
-                title: item.title,
+                title: item.title || 'Medical Source',
                 url: item.url,
-                publishedDate: item.publishedDate
+                publishedDate: item.publishedDate,
+                domain: item.url ? new URL(item.url).hostname.replace('www.', '') : 'Medical Source'
               }))
             }
             return []

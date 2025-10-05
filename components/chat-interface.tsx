@@ -3,7 +3,6 @@
 import type React from "react"
 
 import { useState, useRef, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -362,175 +361,193 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
   }
 
   return (
-    <div className="flex w-full h-full gap-6 p-6">
+    <div className="flex w-full h-full">
       {/* Sidebar */}
-      <div className="hidden w-80 flex-col gap-6 lg:flex">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Knowledge Categories</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {[
-              { id: "general", label: "General Medical" },
-              { id: "emergency", label: "Emergency Care" },
-              { id: "maternal", label: "Maternal Health" },
-              { id: "pediatric", label: "Pediatric Care" },
-              { id: "infectious", label: "Infectious Diseases" },
-              { id: "drugs", label: "Drug Information" },
-            ].map((category) => (
-              <button
-                key={category.id}
-                onClick={() => setSelectedCategory(category.id)}
-                className={`w-full rounded-lg px-3 py-2 text-left text-sm transition-colors ${
-                  selectedCategory === category.id
-                    ? "bg-primary text-primary-foreground"
-                    : "hover:bg-accent hover:text-accent-foreground"
-                }`}
-              >
-                {category.label}
-              </button>
-            ))}
-          </CardContent>
-        </Card>
+      <div className="hidden w-80 flex-col border-r bg-muted/30 lg:flex">
+        <div className="flex flex-col gap-4 p-4">
+          {/* Knowledge Categories */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-foreground/80 uppercase tracking-wide">
+              Knowledge Categories
+            </h3>
+            <div className="space-y-1">
+              {[
+                { id: "general", label: "General Medical", icon: "🏥" },
+                { id: "emergency", label: "Emergency Care", icon: "🚨" },
+                { id: "maternal", label: "Maternal Health", icon: "🤱" },
+                { id: "pediatric", label: "Pediatric Care", icon: "👶" },
+                { id: "infectious", label: "Infectious Diseases", icon: "🦠" },
+                { id: "drugs", label: "Drug Information", icon: "💊" },
+              ].map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => setSelectedCategory(category.id)}
+                  className={`w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-all duration-200 ${
+                    selectedCategory === category.id
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-foreground/70 hover:bg-accent hover:text-accent-foreground"
+                  }`}
+                >
+                  <span className="text-base">{category.icon}</span>
+                  <span className="font-medium">{category.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base">Chat History</CardTitle>
-            <Button
-              onClick={createNewSession}
-              size="sm"
-              variant="outline"
-              className="h-7 px-2 text-xs"
-            >
-              <svg className="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              New Chat
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-2">
+          {/* Chat History */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-foreground/80 uppercase tracking-wide">
+                Chat History
+              </h3>
+              <Button
+                onClick={createNewSession}
+                size="sm"
+                variant="outline"
+                className="h-7 px-2 text-xs font-medium"
+              >
+                <svg className="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                New
+              </Button>
+            </div>
+            
             {sessions.length === 0 ? (
-              <div className="text-center py-4 text-sm text-muted-foreground">
-                No chat history yet
+              <div className="text-center py-8">
+                <div className="text-4xl mb-2">💬</div>
+                <p className="text-sm text-muted-foreground">No conversations yet</p>
+                <p className="text-xs text-muted-foreground/70 mt-1">Start a new chat to begin</p>
               </div>
             ) : (
-              <div className="space-y-1 max-h-96 overflow-y-auto">
+              <div className="space-y-1 max-h-80 overflow-y-auto">
                 {sessions.map((session) => (
                   <div
                     key={session.id}
-                    className={`group relative rounded-lg border p-3 transition-all duration-200 ${
+                    className={`group relative rounded-lg transition-all duration-200 ${
                       currentSession === session.id
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "border-border hover:bg-accent hover:text-accent-foreground"
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "hover:bg-accent/50"
                     }`}
                   >
                     <button
                       onClick={() => loadSession(session.id)}
-                      className="w-full text-left"
+                      className="w-full text-left p-3"
                     >
-                      <div className="font-medium text-sm truncate mb-1">
-                        {session.title}
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm truncate mb-1">
+                            {session.title}
+                          </div>
+                          <div className={`text-xs ${
+                            currentSession === session.id
+                              ? "text-primary-foreground/70"
+                              : "text-muted-foreground"
+                          }`}>
+                            {new Date(session.updated_at).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </div>
+                        </div>
+                        
+                        {/* Delete button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            deleteSession(session.id)
+                          }}
+                          className={`opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md ${
+                            currentSession === session.id
+                              ? "hover:bg-primary-foreground/20"
+                              : "hover:bg-destructive hover:text-destructive-foreground"
+                          }`}
+                        >
+                          <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
                       </div>
-                      <div className={`text-xs ${
-                        currentSession === session.id
-                          ? "text-primary-foreground/70"
-                          : "text-muted-foreground"
-                      }`}>
-                        {new Date(session.updated_at).toLocaleDateString()}
-                      </div>
-                    </button>
-                    
-                    {/* Delete button */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        deleteSession(session.id)
-                      }}
-                      className={`absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded ${
-                        currentSession === session.id
-                          ? "hover:bg-primary-foreground/20"
-                          : "hover:bg-destructive hover:text-destructive-foreground"
-                      }`}
-                    >
-                      <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
                     </button>
                   </div>
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
-
+          </div>
+        </div>
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex flex-1 flex-col h-full">
-        <Card className="flex flex-1 flex-col h-full">
-          <CardHeader className="border-b">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <MedReadyLogo size="sm" showText={false} />
-                <div>
-                  <CardTitle>
-                    {sessions.find(s => s.id === currentSession)?.title || "MedReady AI Assistant"}
-                  </CardTitle>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Ask medical questions, check protocols, or search drug interactions
-                  </p>
-                </div>
+      <div className="flex flex-1 flex-col h-full bg-background">
+        {/* Chat Header */}
+        <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="flex items-center justify-between px-6 py-4">
+            <div className="flex items-center gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-green-500">
+                <MedReadyLogo size="sm" showText={false} className="h-5 w-5 text-white" />
               </div>
-              <Badge variant="outline" className="bg-accent/10">
+              <div>
+                <h1 className="text-lg font-semibold text-foreground">
+                  {sessions.find(s => s.id === currentSession)?.title || "MedReady AI Assistant"}
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  Ask medical questions, check protocols, or search drug interactions
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Badge variant="secondary" className="px-3 py-1">
                 {selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}
               </Badge>
             </div>
-          </CardHeader>
+          </div>
+        </div>
 
-          {/* Messages */}
-          <CardContent className="flex-1 overflow-y-auto p-6 max-h-[600px]">
-            {conversation.length === 0 ? (
-              <div className="flex h-full flex-col items-center justify-center text-center">
-                <div className="mb-6">
-                  <MedReadyLogo size="lg" showText={false} />
+        {/* Messages Area */}
+        <div className="flex-1 overflow-y-auto">
+          {conversation.length === 0 ? (
+            <div className="flex h-full flex-col items-center justify-center text-center px-6 py-12">
+              <div className="mb-8">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-green-500 mx-auto mb-4">
+                  <MedReadyLogo size="lg" showText={false} className="h-8 w-8 text-white" />
                 </div>
-                <h3 className="mb-2 text-xl font-semibold bg-gradient-to-r from-blue-600 to-green-500 bg-clip-text text-transparent">
+                <h3 className="mb-3 text-2xl font-semibold bg-gradient-to-r from-blue-600 to-green-500 bg-clip-text text-transparent">
                   Welcome to MedReady AI
                 </h3>
-                <p className="mb-6 max-w-md text-sm text-muted-foreground">
+                <p className="mb-8 max-w-md text-muted-foreground leading-relaxed">
                   Your AI-powered medical knowledge assistant. Ask questions about protocols, treatments, drug
                   interactions, and more.
                 </p>
-                <div className="flex flex-wrap justify-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={createNewSession}
-                    className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-green-50 dark:hover:from-blue-950/20 dark:hover:to-green-950/20"
-                  >
-                    Start New Chat
-                  </Button>
-                </div>
+                <Button
+                  onClick={createNewSession}
+                  className="bg-gradient-to-r from-blue-600 to-green-500 hover:from-blue-700 hover:to-green-600 text-white shadow-lg"
+                >
+                  Start New Chat
+                </Button>
               </div>
-            ) : (
-              <div className="space-y-6">
-                {conversation.map((message) => (
+            </div>
+          ) : (
+            <div className="px-6 py-6 space-y-6">
+              {conversation.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex gap-4 ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  {message.role === "assistant" && (
+                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-green-500 shadow-sm">
+                      <MedReadyLogo size="sm" showText={false} className="h-4 w-4 text-white" />
+                    </div>
+                  )}
                   <div
-                    key={message.id}
-                    className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                    className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                      message.role === "user" 
+                        ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg" 
+                        : "bg-muted/50 border border-border/50 text-foreground shadow-sm"
+                    }`}
                   >
-                    {message.role === "assistant" && (
-                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-blue-600 to-green-500">
-                        <MedReadyLogo size="sm" showText={false} className="h-4 w-4" />
-                      </div>
-                    )}
-                    <div
-                      className={`max-w-[80%] rounded-lg px-4 py-3 shadow-sm ${
-                        message.role === "user" 
-                          ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white" 
-                          : "bg-card border border-border/50 text-foreground"
-                      }`}
-                    >
                       <div className={`text-sm leading-relaxed ${
                         message.role === "user" 
                           ? "prose prose-sm max-w-none prose-headings:text-white prose-p:text-white prose-strong:text-white prose-em:text-white prose-ul:text-white prose-ol:text-white prose-li:text-white prose-a:text-blue-200 prose-a:no-underline hover:prose-a:underline"
@@ -598,150 +615,156 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
                         </ReactMarkdown>
                       </div>
                             
-                      {/* Display citations if available */}
-                      {message.citations && message.citations.length > 0 && (
-                        <div className={`mt-4 pt-4 border-t ${
+                    {/* Display citations if available */}
+                    {message.citations && message.citations.length > 0 && (
+                      <div className={`mt-4 pt-4 border-t ${
+                        message.role === "user" 
+                          ? "border-blue-300/20" 
+                          : "border-border/50"
+                      }`}>
+                        <div className={`text-xs font-medium mb-3 flex items-center gap-2 ${
                           message.role === "user" 
-                            ? "border-blue-300/20" 
-                            : "border-border/50"
+                            ? "text-blue-200/90" 
+                            : "text-muted-foreground"
                         }`}>
-                          <div className={`text-xs font-medium mb-3 flex items-center gap-2 ${
+                          <div className={`p-1 rounded ${
                             message.role === "user" 
-                              ? "text-blue-200/90" 
-                              : "text-muted-foreground"
+                              ? "bg-blue-500/20" 
+                              : "bg-muted"
                           }`}>
-                            <div className={`p-1 rounded ${
-                              message.role === "user" 
-                                ? "bg-blue-500/20" 
-                                : "bg-muted"
-                            }`}>
-                              <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                            </div>
-                            Verified Sources ({message.citations.length})
+                            <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
                           </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {message.citations.map((citation, index) => (
-                              <a 
-                                key={index}
-                                href={citation.url} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className={`group relative overflow-hidden rounded-xl border transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 ${
-                                  message.role === "user" 
-                                    ? "border-blue-300/30 bg-gradient-to-br from-blue-500/5 to-blue-600/10 hover:from-blue-500/10 hover:to-blue-600/20 hover:border-blue-300/50" 
-                                    : "border-border/60 bg-gradient-to-br from-muted/30 to-muted/50 hover:from-muted/50 hover:to-muted/70 hover:border-border/80"
-                                }`}
-                              >
-                                <div className="p-3">
-                                  <div className="flex items-start gap-3">
-                                    <div className={`flex-shrink-0 w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold ${
+                          Verified Sources ({message.citations.length})
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {message.citations.map((citation, index) => (
+                            <a 
+                              key={index}
+                              href={citation.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className={`group relative overflow-hidden rounded-xl border transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 ${
+                                message.role === "user" 
+                                  ? "border-blue-300/30 bg-gradient-to-br from-blue-500/5 to-blue-600/10 hover:from-blue-500/10 hover:to-blue-600/20 hover:border-blue-300/50" 
+                                  : "border-border/60 bg-gradient-to-br from-muted/30 to-muted/50 hover:from-muted/50 hover:to-muted/70 hover:border-border/80"
+                              }`}
+                            >
+                              <div className="p-3">
+                                <div className="flex items-start gap-3">
+                                  <div className={`flex-shrink-0 w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold ${
+                                    message.role === "user" 
+                                      ? "bg-blue-500/20 text-blue-200" 
+                                      : "bg-primary/10 text-primary"
+                                  }`}>
+                                    {index + 1}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className={`font-medium text-sm leading-tight mb-1 line-clamp-2 ${
                                       message.role === "user" 
-                                        ? "bg-blue-500/20 text-blue-200" 
-                                        : "bg-primary/10 text-primary"
+                                        ? "text-blue-100" 
+                                        : "text-foreground"
                                     }`}>
-                                      {index + 1}
+                                      {citation.title}
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                      <div className={`font-medium text-sm leading-tight mb-1 line-clamp-2 ${
-                                        message.role === "user" 
-                                          ? "text-blue-100" 
-                                          : "text-foreground"
-                                      }`}>
-                                        {citation.title}
-                                      </div>
-                                      <div className="flex items-center gap-2 text-xs">
-                                        {citation.domain && (
-                                          <span className={`px-2 py-0.5 rounded-full font-medium ${
-                                            message.role === "user" 
-                                              ? "bg-blue-500/20 text-blue-300" 
-                                              : "bg-muted text-muted-foreground"
-                                          }`}>
-                                            {citation.domain}
-                                          </span>
-                                        )}
-                                        {citation.publishedDate && (
-                                          <span className={`${
-                                            message.role === "user" 
-                                              ? "text-blue-300/70" 
-                                              : "text-muted-foreground"
-                                          }`}>
-                                            {new Date(citation.publishedDate).toLocaleDateString()}
-                                          </span>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <div className={`flex-shrink-0 p-1 rounded-lg transition-all duration-200 ${
-                                      message.role === "user" 
-                                        ? "text-blue-300/60 group-hover:text-blue-200 group-hover:bg-blue-500/20" 
-                                        : "text-muted-foreground group-hover:text-foreground group-hover:bg-muted"
-                                    }`}>
-                                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                      </svg>
+                                    <div className="flex items-center gap-2 text-xs">
+                                      {citation.domain && (
+                                        <span className={`px-2 py-0.5 rounded-full font-medium ${
+                                          message.role === "user" 
+                                            ? "bg-blue-500/20 text-blue-300" 
+                                            : "bg-muted text-muted-foreground"
+                                        }`}>
+                                          {citation.domain}
+                                        </span>
+                                      )}
+                                      {citation.publishedDate && (
+                                        <span className={`${
+                                          message.role === "user" 
+                                            ? "text-blue-300/70" 
+                                            : "text-muted-foreground"
+                                        }`}>
+                                          {new Date(citation.publishedDate).toLocaleDateString()}
+                                        </span>
+                                      )}
                                     </div>
                                   </div>
+                                  <div className={`flex-shrink-0 p-1 rounded-lg transition-all duration-200 ${
+                                    message.role === "user" 
+                                      ? "text-blue-300/60 group-hover:text-blue-200 group-hover:bg-blue-500/20" 
+                                      : "text-muted-foreground group-hover:text-foreground group-hover:bg-muted"
+                                  }`}>
+                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                    </svg>
+                                  </div>
                                 </div>
-                                {/* Subtle gradient overlay for depth */}
-                                <div className={`absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${
-                                  message.role === "user" 
-                                    ? "bg-gradient-to-r from-transparent via-blue-500/5 to-transparent" 
-                                    : "bg-gradient-to-r from-transparent via-primary/5 to-transparent"
-                                }`} />
-                              </a>
-                            ))}
-                          </div>
+                              </div>
+                            </a>
+                          ))}
                         </div>
-                      )}
-                          </div>
-                    {message.role === "user" && (
-                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-accent">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="h-4 w-4"
-                        >
-                          <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                          <circle cx="12" cy="7" r="4" />
-                        </svg>
                       </div>
                     )}
                   </div>
-                ))}
-                {isLoading && (
-                  <div className="flex gap-3">
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-blue-600 to-green-500">
-                      <MedReadyLogo size="sm" showText={false} className="h-4 w-4 animate-pulse" />
+                  {message.role === "user" && (
+                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-blue-700 shadow-sm">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-4 w-4 text-white"
+                      >
+                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
                     </div>
-                    <div className="flex items-center gap-1 rounded-lg bg-card border border-border/50 px-4 py-3 shadow-sm">
-                      <div className="h-2 w-2 animate-bounce rounded-full bg-blue-600 [animation-delay:-0.3s]" />
-                      <div className="h-2 w-2 animate-bounce rounded-full bg-green-500 [animation-delay:-0.15s]" />
-                      <div className="h-2 w-2 animate-bounce rounded-full bg-blue-600" />
-                    </div>
+                  )}
+                </div>
+              ))}
+              {isLoading && (
+                <div className="flex gap-4 justify-start">
+                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-green-500 shadow-sm">
+                    <MedReadyLogo size="sm" showText={false} className="h-4 w-4 text-white animate-pulse" />
                   </div>
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-            )}
-          </CardContent>
+                  <div className="flex items-center gap-1 rounded-2xl bg-muted/50 border border-border/50 px-4 py-3 shadow-sm">
+                    <div className="h-2 w-2 animate-bounce rounded-full bg-blue-600 [animation-delay:-0.3s]" />
+                    <div className="h-2 w-2 animate-bounce rounded-full bg-green-500 [animation-delay:-0.15s]" />
+                    <div className="h-2 w-2 animate-bounce rounded-full bg-blue-600" />
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+          )}
+        </div>
 
-          {/* Input */}
-          <div className="border-t p-4">
-            <form onSubmit={handleFormSubmit} className="flex gap-2">
-              <Input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask a medical question..."
-                disabled={isLoading}
-                className="flex-1"
-              />
-              <Button type="submit" disabled={isLoading || !input.trim()}>
+        {/* Input Area */}
+        <div className="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="px-6 py-4">
+            <form onSubmit={handleFormSubmit} className="flex gap-3">
+              <div className="flex-1 relative">
+                <Input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Ask a medical question..."
+                  disabled={isLoading}
+                  className="pr-12 h-12 rounded-xl border-border/50 bg-background/50 backdrop-blur-sm focus:bg-background transition-all duration-200"
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
+                    <span className="text-xs">⌘</span>K
+                  </kbd>
+                </div>
+              </div>
+              <Button 
+                type="submit" 
+                disabled={isLoading || !input.trim()}
+                className="h-12 px-6 bg-gradient-to-r from-blue-600 to-green-500 hover:from-blue-700 hover:to-green-600 text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 {isLoading ? (
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -772,11 +795,19 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
                 )}
               </Button>
             </form>
-            <p className="mt-2 text-xs text-muted-foreground">
-              AI responses are for educational purposes. Always verify critical information and follow local protocols.
-            </p>
+            <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
+              <p>
+                AI responses are for educational purposes. Always verify critical information and follow local protocols.
+              </p>
+              <div className="flex items-center gap-4">
+                <span className="flex items-center gap-1">
+                  <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                  Online
+                </span>
+              </div>
+            </div>
           </div>
-        </Card>
+        </div>
       </div>
     </div>
   )

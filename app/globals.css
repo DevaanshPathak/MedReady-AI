@@ -210,6 +210,10 @@
   .landing-partners {
     @apply flex flex-wrap items-center justify-center gap-x-12 gap-y-4 text-sm font-medium text-muted-foreground;
   }
+
+  .landing-hero-panel {
+    @apply flex h-full flex-col justify-between gap-8 rounded-[calc(var(--radius)*1.5)] border border-border bg-background/80 p-8 shadow-lg backdrop-blur;
+  }
 }
 
 @layer utilities {

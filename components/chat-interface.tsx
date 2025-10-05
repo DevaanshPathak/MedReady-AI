@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { useChat } from "@ai-sdk/react"
+import { useChat, useCompletion } from "@ai-sdk/react"
 import { createClient } from "@/lib/supabase/client"
 
 interface ChatInterfaceProps {
@@ -36,16 +36,18 @@ const quickPrompts = [
 
 export function ChatInterface({ userId, profile, initialMessages }: ChatInterfaceProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("general")
+  const [input, setInput] = useState<string>("")
+  const [conversation, setConversation] = useState<Array<{
+    id: string
+    role: "user" | "assistant"
+    content: string
+    created_at: string
+  }>>(initialMessages)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
-    api: "/api/chat",
-    initialMessages: initialMessages.map((msg) => ({
-      id: msg.id,
-      role: msg.role as "user" | "assistant",
-      content: msg.content,
-    })),
+  const { completion, handleInputChange, handleSubmit, isLoading } = useCompletion({
+    api: "/api/completion",
     body: {
       userId,
       userRole: profile?.role,
@@ -53,15 +55,32 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
       location: profile?.location,
       category: selectedCategory,
     },
-    onFinish: async (message) => {
+    onFinish: async (completion) => {
       // Save assistant message to database
       await supabase.from("chat_messages").insert({
         user_id: userId,
-        role: message.role,
-        content: message.content,
+        role: "assistant",
+        content: completion,
         category: selectedCategory,
       })
+
+      // Add the completion to conversation
+      setConversation(prev => [...prev, {
+        id: `assistant-${Date.now()}`,
+        role: "assistant",
+        content: completion,
+        created_at: new Date().toISOString(),
+      }])
     },
+  })
+
+  // Debug logging
+  console.log("Chat Interface Debug:", {
+    conversation: conversation,
+    conversationLength: conversation?.length,
+    completion,
+    isLoading,
+    input
   })
 
   const scrollToBottom = () => {
@@ -70,24 +89,48 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
 
   useEffect(() => {
     scrollToBottom()
-  }, [messages])
+  }, [conversation])
+
 
   const handleQuickPrompt = (prompt: string) => {
-    const syntheticEvent = {
-      preventDefault: () => {},
-    } as React.FormEvent<HTMLFormElement>
+    setInput(prompt)
+    // Add user message to conversation immediately
+    const userMessage = {
+      id: `user-${Date.now()}`,
+      role: "user" as const,
+      content: prompt,
+      created_at: new Date().toISOString(),
+    }
+    setConversation(prev => [...prev, userMessage])
 
-    handleInputChange({
-      target: { value: prompt },
-    } as React.ChangeEvent<HTMLInputElement>)
+    // Save user message to database
+    supabase.from("chat_messages").insert({
+      user_id: userId,
+      role: "user",
+      content: prompt,
+      category: selectedCategory,
+    })
 
-    setTimeout(() => {
-      handleSubmit(syntheticEvent)
-    }, 100)
+    // Submit to completion API with the prompt
+    handleSubmit(new Event('submit') as any)
+    
+    // Clear input after submission
+    setInput("")
   }
 
-  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+  const handleFormSubmit = async (e?: React.FormEvent<HTMLFormElement>) => {
+    e?.preventDefault()
+
+    if (!input.trim()) return
+
+    // Add user message to conversation immediately
+    const userMessage = {
+      id: `user-${Date.now()}`,
+      role: "user" as const,
+      content: input,
+      created_at: new Date().toISOString(),
+    }
+    setConversation(prev => [...prev, userMessage])
 
     // Save user message to database
     await supabase.from("chat_messages").insert({
@@ -97,7 +140,11 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
       category: selectedCategory,
     })
 
+    // Submit to completion API
     handleSubmit(e)
+    
+    // Clear input after submission
+    setInput("")
   }
 
   return (
@@ -150,29 +197,6 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Knowledge Base Status</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Last Updated</span>
-              <Badge variant="secondary">Today</Badge>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Protocols</span>
-              <span className="font-medium">2,847</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Drug Database</span>
-              <span className="font-medium">15,432</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Guidelines</span>
-              <span className="font-medium">1,256</span>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Main Chat Area */}
@@ -194,7 +218,7 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
 
           {/* Messages */}
           <CardContent className="flex-1 overflow-y-auto p-6">
-            {messages.length === 0 ? (
+            {conversation.length === 0 ? (
               <div className="flex h-full flex-col items-center justify-center text-center">
                 <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
                   <svg
@@ -234,7 +258,7 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
               </div>
             ) : (
               <div className="space-y-6">
-                {messages.map((message) => (
+                {conversation.map((message) => (
                   <div
                     key={message.id}
                     className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
@@ -314,7 +338,10 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
             <form onSubmit={handleFormSubmit} className="flex gap-2">
               <Input
                 value={input}
-                onChange={handleInputChange}
+                onChange={(e) => {
+                  setInput(e.target.value)
+                  handleInputChange(e)
+                }}
                 placeholder="Ask a medical question..."
                 disabled={isLoading}
                 className="flex-1"

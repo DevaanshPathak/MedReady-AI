@@ -20,68 +20,9 @@ const systemPrompts = {
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    console.log("Chat API received body:", JSON.stringify(body, null, 2))
+    console.log("Completion API received body:", JSON.stringify(body, null, 2))
     
-    let messages, userId, userRole, specialization, location, category
-
-    // Handle different request formats
-    if (body.messages && Array.isArray(body.messages)) {
-      // useChat format
-      messages = body.messages
-      
-      // Try to get userId from body first, then from last message data
-      if (body.userId) {
-        userId = body.userId
-        userRole = body.userRole
-        specialization = body.specialization
-        location = body.location
-        category = body.category
-      } else {
-        // Extract from last message data
-        const lastMessage = body.messages[body.messages.length - 1]
-        if (lastMessage?.data) {
-          userId = lastMessage.data.userId
-          userRole = lastMessage.data.userRole
-          specialization = lastMessage.data.specialization
-          location = lastMessage.data.location
-          category = lastMessage.data.category
-          console.log("Extracted from message data:", { userId, userRole, specialization, location, category })
-        }
-      }
-    } else if (body.prompt) {
-      // useCompletion format
-      messages = [
-        {
-          role: "user",
-          content: body.prompt,
-        }
-      ]
-      userId = body.userId
-      userRole = body.userRole
-      specialization = body.specialization
-      location = body.location
-      category = body.category
-    } else {
-      // Fallback: try to extract from message data
-      const lastMessage = body.messages?.[body.messages.length - 1]
-      if (lastMessage?.data) {
-        messages = body.messages
-        userId = lastMessage.data.userId
-        userRole = lastMessage.data.userRole
-        specialization = lastMessage.data.specialization
-        location = lastMessage.data.location
-        category = lastMessage.data.category
-        console.log("Extracted from message data:", { userId, userRole, specialization, location, category })
-      } else {
-        console.log("No message data found, using fallback values")
-        messages = body.messages || []
-        userId = body.userId
-        userRole = body.userRole
-        specialization = body.specialization
-        location = body.location
-        category = body.category
-      }
-    }
+    const { prompt, userId, userRole, specialization, location, category } = body
 
     const supabase = await createClient()
 
@@ -130,7 +71,10 @@ Format responses clearly with:
           role: "system",
           content: contextPrompt,
         },
-        ...messages,
+        {
+          role: "user",
+          content: prompt,
+        },
       ],
       temperature: 0.7,
       maxTokens: 2000,
@@ -138,7 +82,7 @@ Format responses clearly with:
 
     return result.toTextStreamResponse()
   } catch (error) {
-    console.error("[v0] Chat API error:", error)
+    console.error("[v0] Completion API error:", error)
     return new Response("Internal Server Error", { status: 500 })
   }
 }

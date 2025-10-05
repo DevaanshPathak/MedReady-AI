@@ -482,7 +482,7 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
         <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="flex items-center justify-between px-6 py-4">
             <div className="flex items-center gap-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-green-500">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-[#0066CC] to-[#00A86B]">
                 <MedReadyLogo size="sm" showText={false} className="h-5 w-5 text-white" />
               </div>
               <div>
@@ -507,10 +507,10 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
           {conversation.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center text-center px-6 py-12">
               <div className="mb-8">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-green-500 mx-auto mb-4">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0066CC] to-[#00A86B] mx-auto mb-4">
                   <MedReadyLogo size="lg" showText={false} className="h-8 w-8 text-white" />
                 </div>
-                <h3 className="mb-3 text-2xl font-semibold bg-gradient-to-r from-blue-600 to-green-500 bg-clip-text text-transparent">
+                <h3 className="mb-3 text-2xl font-semibold bg-gradient-to-r from-[#0066CC] to-[#00A86B] bg-clip-text text-transparent">
                   Welcome to MedReady AI
                 </h3>
                 <p className="mb-8 max-w-md text-muted-foreground leading-relaxed">
@@ -519,7 +519,7 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
                 </p>
                 <Button
                   onClick={createNewSession}
-                  className="bg-gradient-to-r from-blue-600 to-green-500 hover:from-blue-700 hover:to-green-600 text-white shadow-lg"
+                  className="bg-gradient-to-r from-[#0066CC] to-[#00A86B] hover:from-[#0052A3] hover:to-[#008F5A] text-white shadow-lg"
                 >
                   Start New Chat
                 </Button>
@@ -533,14 +533,14 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
                   className={`flex gap-4 ${message.role === "user" ? "justify-end" : "justify-start"}`}
                 >
                   {message.role === "assistant" && (
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-green-500 shadow-sm">
+                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#0066CC] to-[#00A86B] shadow-sm">
                       <MedReadyLogo size="sm" showText={false} className="h-4 w-4 text-white" />
                     </div>
                   )}
                   <div
                     className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                       message.role === "user" 
-                        ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg" 
+                        ? "bg-gradient-to-r from-[#0066CC] to-[#0052A3] text-white shadow-lg" 
                         : "bg-muted/50 border border-border/50 text-foreground shadow-sm"
                     }`}
                   >
@@ -617,7 +617,7 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
                     )}
                   </div>
                   {message.role === "user" && (
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-blue-700 shadow-sm">
+                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#0066CC] to-[#0052A3] shadow-sm">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
@@ -637,13 +637,13 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
               ))}
               {isLoading && (
                 <div className="flex gap-4 justify-start">
-                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-green-500 shadow-sm">
+                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#0066CC] to-[#00A86B] shadow-sm">
                     <MedReadyLogo size="sm" showText={false} className="h-4 w-4 text-white animate-pulse" />
                   </div>
                   <div className="flex items-center gap-1 rounded-2xl bg-muted/50 border border-border/50 px-4 py-3 shadow-sm">
-                    <div className="h-2 w-2 animate-bounce rounded-full bg-blue-600 [animation-delay:-0.3s]" />
-                    <div className="h-2 w-2 animate-bounce rounded-full bg-green-500 [animation-delay:-0.15s]" />
-                    <div className="h-2 w-2 animate-bounce rounded-full bg-blue-600" />
+                    <div className="h-2 w-2 animate-bounce rounded-full bg-[#0066CC] [animation-delay:-0.3s]" />
+                    <div className="h-2 w-2 animate-bounce rounded-full bg-[#00A86B] [animation-delay:-0.15s]" />
+                    <div className="h-2 w-2 animate-bounce rounded-full bg-[#0066CC]" />
                   </div>
                 </div>
               )}
@@ -664,16 +664,11 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
                   disabled={isLoading}
                   className="pr-12 h-12 rounded-xl border-border/50 bg-background/50 backdrop-blur-sm focus:bg-background transition-all duration-200"
                 />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
-                    <span className="text-xs">⌘</span>K
-                  </kbd>
-                </div>
               </div>
               <Button 
                 type="submit" 
                 disabled={isLoading || !input.trim()}
-                className="h-12 px-6 bg-gradient-to-r from-blue-600 to-green-500 hover:from-blue-700 hover:to-green-600 text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-12 px-6 bg-gradient-to-r from-[#0066CC] to-[#00A86B] hover:from-[#0052A3] hover:to-[#008F5A] text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <svg

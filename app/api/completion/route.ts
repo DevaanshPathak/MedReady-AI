@@ -21,8 +21,11 @@ export async function POST(req: Request) {
   try {
     const body = await req.json()
     console.log("Completion API received body:", JSON.stringify(body, null, 2))
+    console.log("Body keys:", Object.keys(body))
     
     const { prompt, userId, userRole, specialization, location, category } = body
+    
+    console.log("Extracted values:", { prompt, userId, userRole, specialization, location, category })
 
     const supabase = await createClient()
 
@@ -65,7 +68,7 @@ Format responses clearly with:
 - When to seek additional help`
 
     const result = streamText({
-      model: "xai/grok-4-fast-reasoning",
+      model: "gpt-4o",
       messages: [
         {
           role: "system",

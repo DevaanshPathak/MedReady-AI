@@ -36,7 +36,6 @@ const quickPrompts = [
 
 export function ChatInterface({ userId, profile, initialMessages }: ChatInterfaceProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("general")
-  const [input, setInput] = useState<string>("")
   const [conversation, setConversation] = useState<Array<{
     id: string
     role: "user" | "assistant"
@@ -46,7 +45,7 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
 
-  const { completion, handleInputChange, handleSubmit, isLoading } = useCompletion({
+  const { completion, input, handleInputChange, handleSubmit, isLoading } = useCompletion({
     api: "/api/completion",
     body: {
       userId,
@@ -57,12 +56,16 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
     },
     onFinish: async (completion) => {
       // Save assistant message to database
-      await supabase.from("chat_messages").insert({
-        user_id: userId,
-        role: "assistant",
-        content: completion,
-        category: selectedCategory,
-      })
+      try {
+        await supabase.from("chat_messages").insert({
+          user_id: userId,
+          role: "assistant",
+          content: completion,
+          category: selectedCategory,
+        })
+      } catch (error) {
+        console.error("Error saving assistant message:", error)
+      }
 
       // Add the completion to conversation
       setConversation(prev => [...prev, {
@@ -92,8 +95,13 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
   }, [conversation])
 
 
-  const handleQuickPrompt = (prompt: string) => {
-    setInput(prompt)
+  const handleQuickPrompt = async (prompt: string) => {
+    // Set the input using the useCompletion hook's handleInputChange
+    const syntheticEvent = {
+      target: { value: prompt }
+    } as React.ChangeEvent<HTMLInputElement>
+    handleInputChange(syntheticEvent)
+    
     // Add user message to conversation immediately
     const userMessage = {
       id: `user-${Date.now()}`,
@@ -104,18 +112,20 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
     setConversation(prev => [...prev, userMessage])
 
     // Save user message to database
-    supabase.from("chat_messages").insert({
-      user_id: userId,
-      role: "user",
-      content: prompt,
-      category: selectedCategory,
-    })
+    try {
+      await supabase.from("chat_messages").insert({
+        user_id: userId,
+        role: "user",
+        content: prompt,
+        category: selectedCategory,
+      })
+    } catch (error) {
+      console.error("Error saving user message:", error)
+    }
 
-    // Submit to completion API with the prompt
-    handleSubmit(new Event('submit') as any)
-    
-    // Clear input after submission
-    setInput("")
+    // Submit to completion API using handleSubmit
+    const syntheticSubmitEvent = new Event('submit') as any
+    handleSubmit(syntheticSubmitEvent)
   }
 
   const handleFormSubmit = async (e?: React.FormEvent<HTMLFormElement>) => {
@@ -133,18 +143,19 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
     setConversation(prev => [...prev, userMessage])
 
     // Save user message to database
-    await supabase.from("chat_messages").insert({
-      user_id: userId,
-      role: "user",
-      content: input,
-      category: selectedCategory,
-    })
+    try {
+      await supabase.from("chat_messages").insert({
+        user_id: userId,
+        role: "user",
+        content: input,
+        category: selectedCategory,
+      })
+    } catch (error) {
+      console.error("Error saving user message:", error)
+    }
 
-    // Submit to completion API
+    // Submit to completion API - useCompletion will handle the input
     handleSubmit(e)
-    
-    // Clear input after submission
-    setInput("")
   }
 
   return (
@@ -338,10 +349,7 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
             <form onSubmit={handleFormSubmit} className="flex gap-2">
               <Input
                 value={input}
-                onChange={(e) => {
-                  setInput(e.target.value)
-                  handleInputChange(e)
-                }}
+                onChange={handleInputChange}
                 placeholder="Ask a medical question..."
                 disabled={isLoading}
                 className="flex-1"

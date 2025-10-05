@@ -4,6 +4,7 @@ import { Reveal } from "@/components/reveal"
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { MedReadyLogo } from "@/components/medready-logo"
 
 export default function HomePage() {
   return (
@@ -11,22 +12,8 @@ export default function HomePage() {
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <Reveal as="div" className="flex items-center gap-2" variant="left">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-5 w-5 text-primary-foreground"
-              >
-                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-              </svg>
-            </div>
-            <span className="text-lg font-semibold">MedReady AI</span>
+          <Reveal as="div" variant="left">
+            <MedReadyLogo size="sm" />
           </Reveal>
           <Reveal as="div" className="flex items-center gap-2" variant="right" delay="xs">
             <ThemeToggle />

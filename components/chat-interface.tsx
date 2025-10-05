@@ -284,24 +284,12 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
           <CardContent className="flex-1 overflow-y-auto p-6 max-h-[600px]">
             {conversation.length === 0 ? (
               <div className="flex h-full flex-col items-center justify-center text-center">
-                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-8 w-8 text-primary"
-                  >
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                    <path d="M8 10h.01" />
-                    <path d="M12 10h.01" />
-                    <path d="M16 10h.01" />
-                  </svg>
+                <div className="mb-6">
+                  <MedReadyLogo size="lg" showText={false} />
                 </div>
-                <h3 className="mb-2 text-lg font-semibold">Welcome to MedReady AI</h3>
+                <h3 className="mb-2 text-xl font-semibold bg-gradient-to-r from-blue-600 to-green-500 bg-clip-text text-transparent">
+                  Welcome to MedReady AI
+                </h3>
                 <p className="mb-6 max-w-md text-sm text-muted-foreground">
                   Your AI-powered medical knowledge assistant. Ask questions about protocols, treatments, drug
                   interactions, and more.
@@ -314,6 +302,7 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
                       size="sm"
                       onClick={() => handleQuickPrompt(prompt)}
                       disabled={isLoading}
+                      className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-green-50 dark:hover:from-blue-950/20 dark:hover:to-green-950/20"
                     >
                       {prompt}
                     </Button>
@@ -417,33 +406,49 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
                         </ReactMarkdown>
                       </div>
                             
-                            {/* Display citations if available */}
-                            {message.citations && message.citations.length > 0 && (
-                              <div className="mt-3 pt-3 border-t border-gray-200">
-                                <div className="text-xs font-semibold text-gray-600 mb-2">
-                                  📚 Sources ({message.citations.length}):
-                                </div>
-                                <div className="space-y-1">
-                                  {message.citations.map((citation, index) => (
-                                    <div key={index} className="text-xs">
-                                      <a 
-                                        href={citation.url} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                        className="text-blue-600 hover:text-blue-800 underline"
-                                      >
-                                        {index + 1}. {citation.title}
-                                      </a>
-                                      {citation.publishedDate && (
-                                        <span className="text-gray-500 ml-2">
-                                          ({new Date(citation.publishedDate).toLocaleDateString()})
-                                        </span>
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
+                      {/* Display citations if available */}
+                      {message.citations && message.citations.length > 0 && (
+                        <div className={`mt-4 pt-3 border-t ${
+                          message.role === "user" 
+                            ? "border-blue-300/30" 
+                            : "border-border"
+                        }`}>
+                          <div className={`text-xs font-semibold mb-2 flex items-center gap-1 ${
+                            message.role === "user" 
+                              ? "text-blue-200" 
+                              : "text-muted-foreground"
+                          }`}>
+                            📚 Sources ({message.citations.length}):
+                          </div>
+                          <div className="space-y-2">
+                            {message.citations.map((citation, index) => (
+                              <div key={index} className="text-xs">
+                                <a 
+                                  href={citation.url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className={`underline hover:no-underline transition-colors ${
+                                    message.role === "user" 
+                                      ? "text-blue-200 hover:text-white" 
+                                      : "text-blue-600 hover:text-blue-800"
+                                  }`}
+                                >
+                                  {index + 1}. {citation.title}
+                                </a>
+                                {citation.publishedDate && (
+                                  <span className={`ml-2 ${
+                                    message.role === "user" 
+                                      ? "text-blue-300/70" 
+                                      : "text-muted-foreground"
+                                  }`}>
+                                    ({new Date(citation.publishedDate).toLocaleDateString()})
+                                  </span>
+                                )}
                               </div>
-                            )}
+                            ))}
+                          </div>
+                        </div>
+                      )}
                           </div>
                     {message.role === "user" && (
                       <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-accent">
@@ -466,7 +471,7 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
                 ))}
                 {isLoading && (
                   <div className="flex gap-3">
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary">
+                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-green-500">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
@@ -475,15 +480,15 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
                         strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        className="h-4 w-4 text-primary-foreground"
+                        className="h-4 w-4 text-white animate-pulse"
                       >
                         <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
                       </svg>
                     </div>
-                    <div className="flex items-center gap-1 rounded-lg bg-muted px-4 py-3">
-                      <div className="h-2 w-2 animate-bounce rounded-full bg-foreground [animation-delay:-0.3s]" />
-                      <div className="h-2 w-2 animate-bounce rounded-full bg-foreground [animation-delay:-0.15s]" />
-                      <div className="h-2 w-2 animate-bounce rounded-full bg-foreground" />
+                    <div className="flex items-center gap-1 rounded-lg bg-card border border-border/50 px-4 py-3 shadow-sm">
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-blue-600 [animation-delay:-0.3s]" />
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-green-500 [animation-delay:-0.15s]" />
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-blue-600" />
                     </div>
                   </div>
                 )}

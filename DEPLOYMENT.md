@@ -6,43 +6,39 @@ This guide will help you deploy MedReady AI to production in minutes.
 
 Before deploying, ensure you have:
 - ✅ A Vercel account (free tier works perfectly)
-- ✅ A Supabase account with a new project created
+- ✅ A Clerk account for authentication
 - ✅ An OpenAI API key
 - ✅ This repository forked/cloned to your GitHub account
 
-## Step 1: Set Up Supabase
+## Step 1: Set Up Clerk Authentication
 
-### 1.1 Create a Supabase Project
+### 1.1 Create a Clerk Application
 
-1. Go to [https://supabase.com](https://supabase.com)
-2. Sign in and click "New Project"
-3. Choose an organization and fill in project details:
+1. Go to [https://clerk.com](https://clerk.com)
+2. Sign up or sign in to your account
+3. Click "Add application"
+4. Fill in application details:
    - **Name**: MedReady-AI
-   - **Database Password**: Create a strong password (save it!)
-   - **Region**: Choose closest to your users
-4. Click "Create new project" (takes ~2 minutes)
+   - **Application type**: Choose "Development" for testing
+5. Click "Create application"
 
-### 1.2 Set Up the Database
+### 1.2 Configure Authentication Settings
 
-1. Once your project is ready, go to the **SQL Editor** in the sidebar
-2. Click "New query"
-3. Copy the entire content from `database-schema.sql` file
-4. Paste it into the SQL editor
-5. Click "Run" to execute the schema
-6. Verify tables were created by going to **Table Editor**
+1. In your Clerk dashboard, go to **Email, Phone, Username**
+2. Enable **Email address** (required)
+3. Configure password requirements:
+   - Minimum length: 8 characters (recommended)
+   - Enable email verification
+4. Optionally enable social login providers (Google, GitHub, etc.)
 
 ### 1.3 Get Your API Keys
 
-1. Go to **Settings** → **API**
+1. In your Clerk dashboard, go to **API Keys**
 2. Copy and save these values:
-   - **Project URL** (e.g., `https://xxxxx.supabase.co`)
-   - **anon public** key (starts with `eyJ...`)
+   - **Publishable Key** (starts with `pk_test_...` or `pk_live_...`)
+   - **Secret Key** (starts with `sk_test_...` or `sk_live_...`)
 
-### 1.4 Configure Authentication
-
-1. Go to **Authentication** → **Providers**
-2. Enable **Email** provider
-3. Optional: Customize email templates in **Email Templates**
+**Important**: Keep your Secret Key secure and never expose it in client-side code!
 
 ## Step 2: Get OpenAI API Key
 
@@ -68,15 +64,15 @@ Before deploying, ensure you have:
 In the "Configure Project" screen, add these environment variables:
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGc...your-anon-key
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...your-publishable-key
+CLERK_SECRET_KEY=sk_test_...your-secret-key
 OPENAI_API_KEY=sk-...your-openai-key
 ```
 
 **Important**: 
 - Replace the values with your actual keys from Steps 1 and 2
-- Make sure `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` start with `NEXT_PUBLIC_`
-- The `OPENAI_API_KEY` should NOT have the `NEXT_PUBLIC_` prefix
+- Make sure `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` starts with `NEXT_PUBLIC_`
+- The `CLERK_SECRET_KEY` and `OPENAI_API_KEY` should NOT have the `NEXT_PUBLIC_` prefix
 
 ### 3.3 Deploy
 
@@ -89,15 +85,16 @@ OPENAI_API_KEY=sk-...your-openai-key
 
 1. Visit your Vercel URL
 2. Click "Sign Up" and create a test account
-3. Check your email for the confirmation link
-4. Confirm your email
-5. Log in
-6. Try starting a quiz:
+3. Enter your name, email, and password
+4. Check your email for the verification code
+5. Enter the verification code to confirm your email
+6. You'll be automatically logged in and redirected to the dashboard
+7. Try starting a quiz:
    - Select a topic (e.g., "Cardiology")
    - Choose difficulty (e.g., "Medium")
    - Click "Start Quiz"
-7. Verify questions are generated
-8. Complete the quiz and check the dashboard
+8. Verify questions are generated
+9. Complete the quiz and check the dashboard
 
 ## Step 5: Configure Custom Domain (Optional)
 
@@ -108,12 +105,15 @@ OPENAI_API_KEY=sk-...your-openai-key
 3. Enter your domain (e.g., `medready.ai`)
 4. Follow the DNS configuration instructions
 
-### 5.2 Update Supabase Redirect URLs
+### 5.2 Update Clerk Redirect URLs
 
-1. Go to Supabase **Authentication** → **URL Configuration**
-2. Add your custom domain to:
-   - **Site URL**: `https://yourdomain.com`
-   - **Redirect URLs**: `https://yourdomain.com/**`
+1. Go to Clerk dashboard → **Paths**
+2. Add your custom domain URLs:
+   - **Home URL**: `https://yourdomain.com`
+   - **Sign-in URL**: `https://yourdomain.com/auth/login`
+   - **Sign-up URL**: `https://yourdomain.com/auth/signup`
+   - **After sign-in URL**: `https://yourdomain.com/dashboard`
+   - **After sign-up URL**: `https://yourdomain.com/dashboard`
 
 ## Troubleshooting
 
@@ -122,18 +122,19 @@ OPENAI_API_KEY=sk-...your-openai-key
 **Error**: "OPENAI_API_KEY is missing"
 - **Solution**: Make sure you added the environment variable in Vercel without the `NEXT_PUBLIC_` prefix
 
-**Error**: "supabaseUrl is required"
-- **Solution**: Check that `NEXT_PUBLIC_SUPABASE_URL` is set correctly
+**Error**: "Missing publishableKey"
+- **Solution**: Check that `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` is set correctly and starts with `NEXT_PUBLIC_`
 
 ### Authentication Issues
 
-**Problem**: Email confirmations not working
-- **Solution**: Check Supabase **Authentication** → **Email Templates** are configured
-- **Solution**: Verify SMTP settings in Supabase if using custom email
+**Problem**: Email verifications not working
+- **Solution**: Check Clerk **Email, Phone, Username** settings to ensure email verification is enabled
+- **Solution**: Verify email delivery in Clerk's **Emails** section
 
 **Problem**: Can't log in after signup
-- **Solution**: Check Supabase **Authentication** → **Users** to see if user was created
-- **Solution**: Verify email confirmation if enabled
+- **Solution**: Check Clerk **Users** dashboard to see if user was created
+- **Solution**: Verify email verification code was entered correctly
+- **Solution**: Check browser console for error messages
 
 ### Quiz Generation Fails
 
@@ -142,19 +143,12 @@ OPENAI_API_KEY=sk-...your-openai-key
 - **Solution**: View Vercel function logs for detailed error messages
 - **Solution**: Check browser console for error messages
 
-### Database Issues
-
-**Problem**: Progress not saving
-- **Solution**: Verify database schema was applied correctly
-- **Solution**: Check Supabase **Table Editor** to see if tables exist
-- **Solution**: Review RLS policies in SQL Editor
-
 ## Environment Variables Reference
 
 | Variable | Required | Public | Description |
 |----------|----------|--------|-------------|
-| `NEXT_PUBLIC_SUPABASE_URL` | ✅ Yes | ✅ Yes | Your Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ Yes | ✅ Yes | Your Supabase anonymous key |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | ✅ Yes | ✅ Yes | Your Clerk publishable key |
+| `CLERK_SECRET_KEY` | ✅ Yes | ❌ No | Your Clerk secret key |
 | `OPENAI_API_KEY` | ✅ Yes | ❌ No | Your OpenAI API key |
 
 ## Performance Optimization
@@ -176,20 +170,20 @@ The app is already optimized for:
 ### 3. Monitor Costs
 
 - **Vercel**: Free tier supports hobby projects (~100GB bandwidth)
-- **Supabase**: Free tier includes 500MB database, 2GB bandwidth
+- **Clerk**: Free tier includes up to 10,000 monthly active users
 - **OpenAI**: ~$0.001-0.002 per question generated (GPT-3.5-turbo)
 
 **Estimated costs for 1000 monthly users**:
 - Vercel: Free (within limits)
-- Supabase: Free (within limits)
+- Clerk: Free (within limits)
 - OpenAI: $10-30/month (depending on usage)
 
 ## Security Checklist
 
 - ✅ Environment variables are set correctly
-- ✅ Supabase Row Level Security (RLS) policies are enabled
-- ✅ OpenAI API key is kept secret (not in client-side code)
-- ✅ CORS is configured properly
+- ✅ Clerk authentication is properly configured
+- ✅ Secret keys are kept secure (not in client-side code)
+- ✅ Email verification is enabled in Clerk
 - ✅ User authentication is required for protected routes
 
 ## Monitoring and Maintenance
@@ -202,13 +196,13 @@ Monitor:
 - Error rates
 - Performance metrics
 
-### Supabase Dashboard
+### Clerk Dashboard
 
 Monitor:
-- Database size
-- API requests
 - Active users
+- Sign-up and sign-in metrics
 - Authentication logs
+- Email delivery status
 
 ### OpenAI Usage
 
@@ -224,12 +218,12 @@ When you reach these limits, consider upgrading:
 
 **Free Tier Limits**:
 - Vercel: 100GB bandwidth, 100GB-hours compute
-- Supabase: 500MB database, 2GB bandwidth
+- Clerk: 10,000 monthly active users
 - OpenAI: Rate limits apply
 
 **Recommended Upgrades**:
 1. **Vercel Pro** ($20/month): More bandwidth and compute
-2. **Supabase Pro** ($25/month): 8GB database, 50GB bandwidth
+2. **Clerk Pro** ($25/month): 100,000 monthly active users, advanced features
 3. **OpenAI Pay-as-you-go**: No limits, pay for usage
 
 ## Support
@@ -238,7 +232,7 @@ If you encounter issues:
 
 1. Check this guide's troubleshooting section
 2. Review Vercel deployment logs
-3. Check Supabase logs
+3. Check Clerk dashboard for authentication errors
 4. Review OpenAI API status
 5. Open an issue on GitHub
 

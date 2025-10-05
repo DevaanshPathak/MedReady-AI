@@ -29,8 +29,8 @@ MedReady AI is a complete, production-ready AI-powered exam preparation assistan
    - Secure signup with email verification
    - Login with session management
    - Form validation and error handling
-   - Supabase Auth integration
-   - User profile creation
+   - Clerk authentication integration
+   - Email verification code flow
 
 3. **Quiz Interface** (`/quiz`)
    - Topic selection (10 medical specialties)
@@ -73,8 +73,7 @@ MedReady AI is a complete, production-ready AI-powered exam preparation assistan
 
 ### Backend
 - **API**: Next.js API Routes (Serverless)
-- **Database**: Supabase PostgreSQL
-- **Authentication**: Supabase Auth
+- **Authentication**: Clerk
 - **AI**: OpenAI GPT-3.5 Turbo
 
 ### Development
@@ -101,8 +100,8 @@ MedReady-AI/
 │   │   ├── layout.tsx                          # Root layout
 │   │   └── page.tsx                            # Landing page
 │   ├── lib/
-│   │   ├── openai.ts                           # OpenAI client
-│   │   └── supabase.ts                         # Supabase client
+│   │   └── openai.ts                           # OpenAI client
+│   ├── middleware.ts                            # Clerk auth middleware
 │   └── types/
 │       └── index.ts                            # TypeScript types
 ├── CONTRIBUTING.md                              # Contribution guidelines
@@ -145,63 +144,42 @@ MedReady-AI/
 4. **Adaptive Learning**: Automatic weak area identification
 5. **Gamification**: Streaks and achievements for motivation
 
-## 🗄️ Database Schema
+## 🔐 Authentication & Security
 
-### Tables
+### Authentication
+- **Provider**: Clerk
+- **Features**:
+  - Email and password authentication
+  - Email verification with code
+  - Session management
+  - Protected routes via middleware
+  - User profile management
 
-1. **profiles**: User profile information
-   - Links to Supabase auth.users
-   - Stores full name and email
-
-2. **questions**: Generated MCQs
-   - Topic and difficulty
-   - Question text and options (JSONB)
-   - Correct answer and explanation
-   - User association
-
-3. **user_answers**: Answer submissions
-   - Question reference
-   - Selected answer
-   - Correctness flag
-   - Time taken
-
-4. **quiz_sessions**: Quiz attempts
-   - Topic and difficulty
-   - Score and completion status
-   - Start and end times
-
-5. **user_progress**: Performance metrics
-   - Total questions and accuracy
-   - Current and longest streak
-   - Weak topics (JSONB)
-   - Last activity tracking
-
-### Security
-
-- **Row Level Security (RLS)**: Enabled on all tables
-- **Policies**: Users can only access their own data
-- **Triggers**: Automatic profile creation on signup
-- **Functions**: Progress tracking automation
+### Security Features
+- **Middleware Protection**: Routes are protected by Clerk middleware
+- **Environment Variables**: Secure API key management
+- **Client-side Security**: Only publishable keys exposed to client
+- **Server-side API**: Secret keys kept secure on server
 
 ## 🚀 Deployment
 
 ### Requirements
 
-1. **Supabase Project**: Free tier sufficient for MVP
+1. **Clerk Account**: Free tier includes 10,000 monthly active users
 2. **OpenAI API Key**: Pay-as-you-go pricing (~$0.001 per question)
 3. **Vercel Account**: Free tier perfect for deployment
 
 ### Environment Variables
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
+CLERK_SECRET_KEY=your_clerk_secret_key
 OPENAI_API_KEY=your_openai_api_key
 ```
 
 ### Deployment Steps
 
-1. Create Supabase project and run `database-schema.sql`
+1. Create Clerk application and configure authentication
 2. Get OpenAI API key with credits
 3. Deploy to Vercel with environment variables
 4. Test authentication and quiz generation

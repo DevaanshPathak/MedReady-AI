@@ -4,7 +4,7 @@ An AI-powered exam preparation assistant for medical students, providing persona
 
 ![MedReady AI](https://img.shields.io/badge/Next.js-14-black?style=flat&logo=next.js)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat&logo=typescript)
-![Supabase](https://img.shields.io/badge/Supabase-Database-green?style=flat&logo=supabase)
+![Clerk](https://img.shields.io/badge/Clerk-Authentication-6C47FF?style=flat)
 ![OpenAI](https://img.shields.io/badge/OpenAI-GPT--3.5-orange?style=flat&logo=openai)
 
 ## 🚀 Features
@@ -12,7 +12,8 @@ An AI-powered exam preparation assistant for medical students, providing persona
 - **AI-Generated MCQs**: Personalized multiple-choice questions powered by OpenAI GPT-3.5
 - **Adaptive Learning**: Intelligent question targeting based on weak areas
 - **Real-Time Analytics**: Track your progress with detailed performance insights
-- **User Authentication**: Secure signup and login with Supabase Auth
+- **User Authentication**: Secure signup and login with Clerk
+- **Email Verification**: Verify your email with code-based authentication
 - **Performance Dashboard**: Visual representation of your learning progress
 - **Topic-Based Practice**: Focus on specific medical topics
 - **Difficulty Levels**: Choose from easy, medium, or hard questions
@@ -23,8 +24,7 @@ An AI-powered exam preparation assistant for medical students, providing persona
 
 - **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS
 - **Backend**: Next.js API Routes
-- **Database**: Supabase (PostgreSQL)
-- **Authentication**: Supabase Auth
+- **Authentication**: Clerk
 - **AI**: OpenAI GPT-3.5 Turbo
 - **UI Components**: Lucide React Icons
 - **Charts**: Recharts (for analytics visualization)
@@ -34,7 +34,7 @@ An AI-powered exam preparation assistant for medical students, providing persona
 
 Before you begin, ensure you have the following installed:
 - Node.js 18+ and npm
-- A Supabase account ([Sign up here](https://supabase.com))
+- A Clerk account ([Sign up here](https://clerk.com))
 - An OpenAI API key ([Get one here](https://platform.openai.com/api-keys))
 
 ## 🔧 Installation
@@ -54,17 +54,18 @@ Before you begin, ensure you have the following installed:
    
    Create a `.env.local` file in the root directory:
    ```env
-   NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
+   CLERK_SECRET_KEY=your_clerk_secret_key
    OPENAI_API_KEY=your_openai_api_key
    ```
 
-4. **Set up Supabase Database**
+4. **Set up Clerk Authentication**
    
-   - Go to your Supabase project dashboard
-   - Navigate to the SQL Editor
-   - Copy and paste the content from `database-schema.sql`
-   - Execute the SQL to create all necessary tables and functions
+   - Go to your Clerk dashboard
+   - Create a new application
+   - Enable email and password authentication
+   - Enable email verification
+   - Copy your API keys to the `.env.local` file
 
 5. **Run the development server**
    ```bash
@@ -94,12 +95,11 @@ MedReady-AI/
 │   │   └── page.tsx                 # Landing page
 │   ├── components/                  # Reusable React components
 │   ├── lib/
-│   │   ├── supabase.ts             # Supabase client
 │   │   └── openai.ts               # OpenAI client
+│   ├── middleware.ts                # Clerk auth middleware
 │   ├── types/
 │   │   └── index.ts                # TypeScript type definitions
 │   └── utils/                      # Utility functions
-├── database-schema.sql             # Supabase database schema
 ├── .env.example                    # Environment variables template
 ├── next.config.js                  # Next.js configuration
 ├── tailwind.config.ts              # Tailwind CSS configuration

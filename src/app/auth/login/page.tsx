@@ -4,10 +4,11 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Brain } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { useSignIn } from '@clerk/nextjs'
 
 export default function LoginPage() {
   const router = useRouter()
+  const { signIn, isLoaded } = useSignIn()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -15,22 +16,25 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!isLoaded) {
+      return
+    }
+
     setError('')
     setLoading(true)
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+      const result = await signIn.create({
+        identifier: email,
         password,
       })
 
-      if (error) throw error
-
-      if (data.session) {
+      if (result.status === 'complete') {
         router.push('/dashboard')
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to login')
+      setError(err.errors?.[0]?.message || 'Failed to login')
     } finally {
       setLoading(false)
     }

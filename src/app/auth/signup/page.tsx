@@ -4,40 +4,68 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Brain } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { useSignUp } from '@clerk/nextjs'
 
 export default function SignupPage() {
   const router = useRouter()
+  const { signUp, isLoaded } = useSignUp()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [verifying, setVerifying] = useState(false)
+  const [code, setCode] = useState('')
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!isLoaded) {
+      return
+    }
+
     setError('')
     setLoading(true)
 
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
+      await signUp.create({
+        emailAddress: email,
         password,
-        options: {
-          data: {
-            full_name: fullName,
-          },
-        },
+        firstName: fullName.split(' ')[0] || fullName,
+        lastName: fullName.split(' ').slice(1).join(' ') || undefined,
       })
 
-      if (error) throw error
+      // Send email verification code
+      await signUp.prepareEmailAddressVerification({ strategy: 'email_code' })
+      
+      setVerifying(true)
+    } catch (err: any) {
+      setError(err.errors?.[0]?.message || 'Failed to sign up')
+    } finally {
+      setLoading(false)
+    }
+  }
 
-      if (data.user) {
-        // Show success message or redirect to login
-        router.push('/auth/login?message=Check your email to confirm your account')
+  const handleVerify = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!isLoaded) {
+      return
+    }
+
+    setError('')
+    setLoading(true)
+
+    try {
+      const result = await signUp.attemptEmailAddressVerification({
+        code,
+      })
+
+      if (result.status === 'complete') {
+        router.push('/dashboard')
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to sign up')
+      setError(err.errors?.[0]?.message || 'Failed to verify')
     } finally {
       setLoading(false)
     }
@@ -65,62 +93,90 @@ export default function SignupPage() {
             </div>
           )}
 
-          <form onSubmit={handleSignup} className="space-y-4">
-            <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
-                Full Name
-              </label>
-              <input
-                id="fullName"
-                type="text"
-                required
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="John Doe"
-              />
-            </div>
+          {!verifying ? (
+            <form onSubmit={handleSignup} className="space-y-4">
+              <div>
+                <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
+                  Full Name
+                </label>
+                <input
+                  id="fullName"
+                  type="text"
+                  required
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  placeholder="John Doe"
+                />
+              </div>
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="your@email.com"
-              />
-            </div>
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                  Email
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  placeholder="your@email.com"
+                />
+              </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="••••••••"
-                minLength={6}
-              />
-              <p className="text-xs text-gray-500 mt-1">Minimum 6 characters</p>
-            </div>
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                  Password
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  placeholder="••••••••"
+                  minLength={8}
+                />
+                <p className="text-xs text-gray-500 mt-1">Minimum 8 characters</p>
+              </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Creating account...' : 'Create Account'}
-            </button>
-          </form>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Creating account...' : 'Create Account'}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleVerify} className="space-y-4">
+              <div>
+                <label htmlFor="code" className="block text-sm font-medium text-gray-700 mb-2">
+                  Verification Code
+                </label>
+                <input
+                  id="code"
+                  type="text"
+                  required
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  placeholder="Enter code from email"
+                />
+                <p className="text-xs text-gray-500 mt-1">Check your email for the verification code</p>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Verifying...' : 'Verify Email'}
+              </button>
+            </form>
+          )}
 
           <div className="mt-6 text-center">
             <p className="text-gray-600">

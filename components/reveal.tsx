@@ -84,7 +84,7 @@ export function Reveal({
 
   return (
     <Component
-      ref={elementRef as React.MutableRefObject<HTMLElement | null>}
+      ref={elementRef as MutableRefObject<HTMLElement | null>}
       className={cn(
         "reveal-element",
         variantClasses[variant],

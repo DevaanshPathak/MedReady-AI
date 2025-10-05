@@ -114,7 +114,7 @@ Format responses clearly with:
 
 User Question: ${prompt}
 
-IMPORTANT: Always use the web search tool to find the most up-to-date information from trusted medical sources. Include proper citations with links in your response.`,
+IMPORTANT: Always use the web search tool to find the most up-to-date information from trusted medical sources. Include proper citations with links in your response. After searching, provide a comprehensive answer based on the search results.`,
             tools: {
               medicalWebSearch,
             },
@@ -125,6 +125,8 @@ IMPORTANT: Always use the web search tool to find the most up-to-date informatio
           console.log("Tool results:", toolResults)
 
     console.log("AI generated response:", text)
+    console.log("AI response length:", text?.length || 0)
+    console.log("AI response type:", typeof text)
 
     // Save assistant message to database
     try {
@@ -173,8 +175,11 @@ IMPORTANT: Always use the web search tool to find the most up-to-date informatio
             return []
           }) || []
 
+          // Fallback if AI doesn't generate response
+          const responseText = text || "I apologize, but I'm having trouble generating a response right now. Please try again or rephrase your question."
+          
           return Response.json({ 
-            completion: text,
+            completion: responseText,
             citations: citations,
             toolCalls: toolCalls?.length || 0
           })

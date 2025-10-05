@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { MedReadyLogo } from "@/components/medready-logo"
 import { cn } from "@/lib/utils"
 
 const navItems = [
@@ -142,22 +143,8 @@ export function DashboardNav() {
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-6">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-5 w-5 text-primary-foreground"
-              >
-                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-              </svg>
-            </div>
-            <span className="hidden font-semibold sm:inline-block">MedReady AI</span>
+          <Link href="/dashboard">
+            <MedReadyLogo size="sm" />
           </Link>
           <nav className="hidden items-center gap-1 md:flex">
             {navItems.map((item) => (

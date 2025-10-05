@@ -18,19 +18,38 @@ export default async function ChatPage() {
   // Fetch user profile for context
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single()
 
-  // Fetch recent chat history
-  const { data: chatHistory } = await supabase
-    .from("chat_messages")
-    .select("*")
+  // Fetch chat sessions with their latest messages
+  const { data: chatSessions } = await supabase
+    .from("chat_sessions")
+    .select(`
+      *,
+      chat_messages (
+        id,
+        role,
+        content,
+        created_at
+      )
+    `)
     .eq("user_id", user.id)
-    .order("created_at", { ascending: true })
-    .limit(50)
+    .order("updated_at", { ascending: false })
+
+  // Get the most recent session's messages for initial load
+  const currentSession = chatSessions?.[0]
+  const initialMessages = currentSession?.chat_messages?.sort((a, b) => 
+    new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  ) || []
 
   return (
     <div className="flex h-screen flex-col bg-background">
       <DashboardNav />
       <main className="flex flex-1 overflow-hidden">
-        <ChatInterface userId={user.id} profile={profile} initialMessages={chatHistory || []} />
+        <ChatInterface 
+          userId={user.id} 
+          profile={profile} 
+          initialMessages={initialMessages}
+          initialSessions={chatSessions || []}
+          currentSessionId={currentSession?.id}
+        />
       </main>
     </div>
   )

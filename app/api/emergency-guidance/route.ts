@@ -1,5 +1,6 @@
-import { generateText } from "ai"
+import { generateText, stepCountIs } from "ai"
 import { createClient } from "@/lib/supabase/server"
+import { emergencyWebSearch } from "@/lib/web-search-tool"
 
 export const maxDuration = 30
 
@@ -19,12 +20,14 @@ export async function POST(req: Request) {
     }
 
     // Get user profile for context
-    const { data: profile } = await supabase.from("user_profiles").select("*").eq("user_id", userId).single()
+    const { data: profile } = await supabase.from("profiles").select("*").eq("id", userId).single()
 
     // Generate emergency guidance using Grok-4-fast-reasoning for critical decisions
-    const { text } = await generateText({
+    const { text, toolCalls, toolResults } = await generateText({
       model: "xai/grok-4-fast-reasoning",
       prompt: `You are an emergency medical AI assistant for rural healthcare workers in India. Provide immediate, actionable guidance for this emergency situation.
+
+Note: If you need the most current emergency protocols or recent guidelines, use the emergency web search tool to find up-to-date information from trusted emergency medicine sources.
 
 Healthcare Worker Profile:
 - Role: ${profile?.role}
@@ -40,6 +43,7 @@ Emergency Case:
 - Vital Signs: ${JSON.stringify(vitalSigns)}
 
 Provide:
+
 1. IMMEDIATE ACTIONS (first 5 minutes)
    - Critical interventions
    - Stabilization steps
@@ -69,23 +73,44 @@ Follow: Indian national emergency protocols, WHO guidelines, and ICMR recommenda
 Consider: Resource limitations in rural settings, available medications, transport challenges.
 
 IMPORTANT: This is for emergency guidance only. Always prioritize patient safety and refer when in doubt.`,
-      temperature: 0.5,
-      maxTokens: 2000,
+      tools: {
+        emergencyWebSearch,
+      },
     })
 
-    // Log emergency consultation
-    await supabase.from("emergency_consultations").insert({
-      user_id: userId,
-      symptoms,
-      severity,
-      patient_age: patientAge,
-      patient_gender: patientGender,
-      vital_signs: vitalSigns,
-      ai_guidance: text,
-      created_at: new Date().toISOString(),
-    })
+    // Save emergency consultation to database
+    try {
+      await supabase.from("emergency_consultations").insert({
+        user_id: userId,
+        symptoms,
+        severity,
+        patient_age: patientAge,
+        patient_gender: patientGender,
+        vital_signs: vitalSigns,
+        ai_guidance: text,
+      })
+      console.log("Successfully saved emergency consultation to database")
+    } catch (error) {
+      console.error("Error saving emergency consultation to database:", error)
+    }
 
-    return Response.json({ guidance: text })
+    // Extract citations from web search results
+    const citations = toolResults?.flatMap(result => {
+      if (result.toolName === 'emergencyWebSearch' && Array.isArray(result)) {
+        return result.map((item: any) => ({
+          title: item.title,
+          url: item.url,
+          publishedDate: item.publishedDate
+        }))
+      }
+      return []
+    }) || []
+
+    return Response.json({ 
+      guidance: text,
+      citations: citations,
+      toolCalls: toolCalls?.length || 0
+    })
   } catch (error) {
     console.error("[v0] Emergency guidance error:", error)
     return new Response("Internal Server Error", { status: 500 })

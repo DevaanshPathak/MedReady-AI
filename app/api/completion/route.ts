@@ -1,20 +1,108 @@
-import { streamText } from "ai"
+import { generateText, stepCountIs } from "ai"
 import { createClient } from "@/lib/supabase/server"
+import { medicalWebSearch } from "@/lib/web-search-tool"
 
 export const maxDuration = 30
 
 const systemPrompts = {
-  general: `You are MedReady AI, an expert medical assistant for healthcare workers in rural India. Provide accurate, evidence-based medical information following Indian healthcare protocols and WHO guidelines. Be concise, practical, and focus on resource-limited settings.`,
+  general: `You are MedReady AI, an expert medical assistant for healthcare workers in rural India. You provide accurate, evidence-based medical information following Indian healthcare protocols and WHO guidelines.
 
-  emergency: `You are MedReady AI specializing in emergency care. Provide rapid, actionable guidance for emergency situations in rural healthcare settings. Focus on triage, stabilization, and when to refer. Always prioritize patient safety.`,
+RESPONSE FORMAT REQUIREMENTS:
+- Always structure your response with clear headings using ## and ###
+- Use bullet points (•) for lists and numbered lists (1., 2., 3.) for steps
+- Include **bold text** for important information and *italics* for emphasis
+- Always cite sources with proper links when using web search results
+- Keep responses concise but comprehensive
+- Focus on practical, actionable advice for resource-limited settings
 
-  maternal: `You are MedReady AI specializing in maternal and child health. Provide guidance on antenatal care, safe delivery practices, postpartum care, and newborn care following Indian national guidelines and WHO recommendations.`,
+CONTENT GUIDELINES:
+- Provide evidence-based information
+- Consider resource limitations in rural settings
+- Follow Indian national health protocols
+- Mention when to refer to higher facilities
+- Include safety warnings when relevant
+- Use simple, clear medical terminology`,
 
-  pediatric: `You are MedReady AI specializing in pediatric care. Provide age-appropriate guidance for common childhood illnesses, growth monitoring, immunizations, and emergency pediatric care in resource-limited settings.`,
+  emergency: `You are MedReady AI specializing in emergency care for rural healthcare settings in India.
 
-  infectious: `You are MedReady AI specializing in infectious diseases. Provide guidance on diagnosis, treatment, and prevention of infectious diseases common in India, including malaria, tuberculosis, dengue, and waterborne diseases.`,
+RESPONSE FORMAT REQUIREMENTS:
+- Structure with clear headings: ## IMMEDIATE ACTIONS, ## ASSESSMENT, ## TREATMENT, ## REFERRAL
+- Use numbered steps for procedures
+- Use **bold** for critical actions and *italics* for warnings
+- Include timeframes (e.g., "within 5 minutes")
+- Always cite latest emergency protocols
 
-  drugs: `You are MedReady AI specializing in pharmacology. Provide information on drug dosages, interactions, contraindications, and side effects. Always mention generic names and consider availability in rural Indian healthcare settings.`,
+EMERGENCY GUIDELINES:
+- Prioritize patient safety above all
+- Focus on triage and stabilization
+- Provide clear referral criteria
+- Consider transport challenges in rural areas
+- Include vital sign parameters
+- Mention equipment availability issues`,
+
+  maternal: `You are MedReady AI specializing in maternal and child health for rural India.
+
+RESPONSE FORMAT REQUIREMENTS:
+- Use clear headings for different aspects (## Antenatal Care, ## Delivery, ## Postpartum)
+- Structure information chronologically when relevant
+- Include gestational age considerations
+- Use **bold** for critical interventions
+- Provide age-appropriate guidance
+
+MATERNAL HEALTH FOCUS:
+- Follow Indian national guidelines and WHO recommendations
+- Consider cultural sensitivities
+- Address common complications
+- Include family planning aspects
+- Focus on safe delivery practices`,
+
+  pediatric: `You are MedReady AI specializing in pediatric care for rural healthcare settings.
+
+RESPONSE FORMAT REQUIREMENTS:
+- Always include age-specific information
+- Structure by age groups: ## Neonates (0-28 days), ## Infants (1-12 months), ## Children (1-12 years)
+- Use weight-based dosing when applicable
+- Include growth and development milestones
+- Use **bold** for critical signs
+
+PEDIATRIC GUIDELINES:
+- Age-appropriate assessments and treatments
+- Consider vaccine schedules
+- Address common childhood illnesses
+- Include parental education points
+- Focus on emergency pediatric care`,
+
+  infectious: `You are MedReady AI specializing in infectious diseases common in India.
+
+RESPONSE FORMAT REQUIREMENTS:
+- Structure by: ## Diagnosis, ## Treatment, ## Prevention, ## Complications
+- Include epidemiological data when relevant
+- Use **bold** for diagnostic criteria
+- Provide seasonal considerations
+- Include vector control measures
+
+INFECTIOUS DISEASE FOCUS:
+- Malaria, tuberculosis, dengue, waterborne diseases
+- Antibiotic stewardship principles
+- Contact tracing protocols
+- Public health considerations
+- Seasonal variations in disease patterns`,
+
+  drugs: `You are MedReady AI specializing in pharmacology for rural Indian healthcare.
+
+RESPONSE FORMAT REQUIREMENTS:
+- Structure by: ## Indications, ## Dosage, ## Contraindications, ## Side Effects, ## Interactions
+- Always provide generic names first
+- Include cost considerations when relevant
+- Use **bold** for critical contraindications
+- Provide alternative medications when available
+
+PHARMACOLOGY GUIDELINES:
+- Consider drug availability in rural settings
+- Include monitoring requirements
+- Address storage conditions
+- Provide patient counseling points
+- Include drug interaction warnings`,
 }
 
 export async function POST(req: Request) {
@@ -46,72 +134,157 @@ export async function POST(req: Request) {
 
     const contextPrompt = `${systemPrompt}
 
-User Context:
-- Role: ${userRole || "Healthcare Worker"}
-- Specialization: ${specialization || "General"}
-- Location: ${location || "Rural India"}
+## USER CONTEXT
+- **Role:** ${userRole || "Healthcare Worker"}
+- **Specialization:** ${specialization || "General"}
+- **Location:** ${location || "Rural India"}
 
-Guidelines:
-1. Provide evidence-based information
-2. Consider resource limitations in rural settings
-3. Follow Indian national health protocols
-4. Mention when to refer to higher facilities
-5. Be practical and actionable
-6. Use simple, clear language
-7. Include safety warnings when relevant
-8. Cite sources when possible (WHO, ICMR, national guidelines)
+## RESPONSE INSTRUCTIONS
+You must ALWAYS:
+1. **Use the web search tool first** to get the most current information
+2. **Structure your response** with clear markdown headings (## and ###)
+3. **Use bullet points** (•) and numbered lists (1., 2., 3.) appropriately
+4. **Focus on practical, actionable advice** for rural healthcare settings
+5. **Consider resource limitations** and local availability
+6. **Include safety warnings** when relevant using *italics*
+7. **Provide clear referral criteria** when appropriate
+8. **Do NOT include raw URLs or citations in your response text** - the system will automatically display citations from your web search results
 
-Format responses clearly with:
-- Key points first
-- Step-by-step instructions when relevant
-- Warning signs to watch for
-- When to seek additional help`
+## FORMATTING REQUIREMENTS
+- Start with a brief overview
+- Use **bold** for critical information
+- Use *italics* for warnings and important notes
+- End with key takeaway points
+- Write naturally without mentioning specific sources or URLs in the text
+- The citation display is handled automatically by the system`
 
     // Save user message to database first
     try {
-      await supabase.from("chat_messages").insert({
-        user_id: userId,
-        role: "user",
-        content: prompt,
-        category: category || "general",
-      })
-      console.log("Successfully saved user message to database")
+      // Create a chat session if it doesn't exist
+      const { data: session } = await supabase
+        .from("chat_sessions")
+        .select("id")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single()
+
+      let sessionId = session?.id
+      if (!sessionId) {
+        const { data: newSession } = await supabase
+          .from("chat_sessions")
+          .insert({
+            user_id: userId,
+            title: "General Chat",
+          })
+          .select("id")
+          .single()
+        sessionId = newSession?.id
+      }
+
+      if (sessionId) {
+        await supabase.from("chat_messages").insert({
+          session_id: sessionId,
+          role: "user",
+          content: prompt,
+        })
+        console.log("Successfully saved user message to database")
+      }
     } catch (error) {
       console.error("Error saving user message to database:", error)
       // Continue with the AI call even if database save fails
     }
 
-    const result = streamText({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: contextPrompt,
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      temperature: 0.7,
-      maxTokens: 2000,
-      onFinish: async (completion) => {
-        // Save assistant message to database
-        try {
-          await supabase.from("chat_messages").insert({
-            user_id: userId,
-            role: "assistant",
-            content: completion,
-            category: category || "general",
-          })
-          console.log("Successfully saved assistant message to database")
-        } catch (error) {
-          console.error("Error saving assistant message to database:", error)
-        }
-      },
-    })
+    console.log("About to call AI model with prompt:", prompt)
+    console.log("Context prompt:", contextPrompt)
+    
+          const { text, toolCalls, toolResults } = await generateText({
+            model: "xai/grok-4-fast-reasoning",
+            prompt: `${contextPrompt}
 
-    return result.toTextStreamResponse()
+User Question: ${prompt}
+
+CRITICAL INSTRUCTIONS:
+1. ALWAYS use the web search tool first to find current medical information
+2. After getting search results, provide a comprehensive, well-structured response
+3. Use proper markdown formatting with ## headings and bullet points
+4. Include specific information from the search results
+5. Do NOT just list the search results - synthesize them into a coherent answer
+6. Focus on answering the user's specific question with practical guidance
+7. Do NOT include URLs, citations, or source references in your response text
+8. Write naturally and let the system handle citation display automatically
+
+Please search for current information and provide a detailed, structured response.`,
+            tools: {
+              medicalWebSearch,
+            },
+            temperature: 0.7,
+            stopWhen: stepCountIs(5),
+          })
+
+          console.log("Tool calls:", toolCalls)
+          console.log("Tool results:", toolResults)
+
+    console.log("AI generated response:", text)
+    console.log("AI response length:", text?.length || 0)
+    console.log("AI response type:", typeof text)
+
+    // Save assistant message to database
+    try {
+      const { data: session } = await supabase
+        .from("chat_sessions")
+        .select("id")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single()
+
+      let sessionId = session?.id
+      if (!sessionId) {
+        const { data: newSession } = await supabase
+          .from("chat_sessions")
+          .insert({
+            user_id: userId,
+            title: "General Chat",
+          })
+          .select("id")
+          .single()
+        sessionId = newSession?.id
+      }
+
+      if (sessionId) {
+        await supabase.from("chat_messages").insert({
+          session_id: sessionId,
+          role: "assistant",
+          content: text,
+        })
+        console.log("Successfully saved assistant message to database")
+      }
+    } catch (error) {
+      console.error("Error saving assistant message to database:", error)
+    }
+
+          // Extract citations from web search results
+          const citations = toolResults?.flatMap(result => {
+            if (result.toolName === 'medicalWebSearch' && Array.isArray(result)) {
+              return result.map((item: any) => ({
+                title: item.title || 'Medical Source',
+                url: item.url,
+                publishedDate: item.publishedDate,
+                domain: item.url ? new URL(item.url).hostname.replace('www.', '') : 'Medical Source'
+              }))
+            }
+            return []
+          }) || []
+
+          // Use the AI generated response (stopWhen handles the multi-step process)
+          const responseText = text || "I apologize, but I'm having trouble generating a response right now. Please try again or rephrase your question."
+          
+          return Response.json({ 
+            completion: responseText,
+            citations: citations,
+            toolCalls: toolCalls?.length || 0
+          })
   } catch (error) {
     console.error("[v0] Completion API error:", error)
     return new Response("Internal Server Error", { status: 500 })

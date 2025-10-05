@@ -42,9 +42,11 @@ export async function POST(req: Request) {
 
     // Generate dynamic assessment using Grok-4-fast-non-reasoning for simpler task
     const { object } = await generateObject({
-      model: "xai/grok-4-fast-non-reasoning",
+      model: "xai/grok-4-fast-reasoning",
       schema: assessmentSchema,
       prompt: `Generate a comprehensive assessment for healthcare workers on: ${module.title}
+
+Note: If you need current medical protocols or recent guidelines for the assessment questions, use the web search tool to find up-to-date information from trusted medical sources.
 
 Module Description: ${module.description}
 Category: ${module.category}

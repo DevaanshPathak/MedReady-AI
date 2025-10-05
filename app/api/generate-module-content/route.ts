@@ -49,6 +49,8 @@ export async function POST(req: Request) {
       schema: moduleContentSchema,
       prompt: `Generate comprehensive, evidence-based learning content for healthcare workers in rural India.
 
+Note: If you need the most current medical guidelines or recent research, use the web search tool to find up-to-date information from trusted medical sources.
+
 Module: ${module.title}
 Description: ${module.description}
 Category: ${module.category}

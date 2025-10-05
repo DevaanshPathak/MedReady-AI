@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { MedReadyLogo } from "@/components/medready-logo"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -43,22 +44,8 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-muted/50 p-4">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-6 w-6 text-primary-foreground"
-              >
-                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-              </svg>
-            </div>
-            <span className="text-xl font-semibold">MedReady AI</span>
+          <Link href="/">
+            <MedReadyLogo size="md" />
           </Link>
         </div>
 

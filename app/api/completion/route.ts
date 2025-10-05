@@ -108,17 +108,16 @@ Format responses clearly with:
     console.log("About to call AI model with prompt:", prompt)
     console.log("Context prompt:", contextPrompt)
     
-          const { text } = await generateText({
+          const { text, toolCalls, toolResults } = await generateText({
             model: "xai/grok-4-fast-reasoning",
             prompt: `${contextPrompt}
 
 User Question: ${prompt}
 
-Note: If the user asks about recent medical guidelines, protocols, or current medical information, use the web search tool to find the most up-to-date information from trusted medical sources.`,
+IMPORTANT: Always use the web search tool to find the most up-to-date information from trusted medical sources. Include proper citations with links in your response.`,
             tools: {
               medicalWebSearch,
             },
-            stopWhen: stepCountIs(3), // Allow up to 3 reasoning steps
             temperature: 0.7,
           })
 
@@ -159,7 +158,23 @@ Note: If the user asks about recent medical guidelines, protocols, or current me
       console.error("Error saving assistant message to database:", error)
     }
 
-    return Response.json({ completion: text })
+          // Extract citations from web search results
+          const citations = toolResults?.flatMap(result => {
+            if (result.toolName === 'medicalWebSearch' && Array.isArray(result)) {
+              return result.map((item: any) => ({
+                title: item.title,
+                url: item.url,
+                publishedDate: item.publishedDate
+              }))
+            }
+            return []
+          }) || []
+
+          return Response.json({ 
+            completion: text,
+            citations: citations,
+            toolCalls: toolCalls?.length || 0
+          })
   } catch (error) {
     console.error("[v0] Completion API error:", error)
     return new Response("Internal Server Error", { status: 500 })

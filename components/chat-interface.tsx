@@ -39,6 +39,12 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
     id: string
     role: "user" | "assistant"
     content: string
+    citations?: Array<{
+      title: string
+      url: string
+      publishedDate?: string
+    }>
+    toolCalls?: number
     created_at: string
   }>>(initialMessages)
   const [input, setInput] = useState("")
@@ -104,6 +110,8 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
           id: `assistant-${Date.now()}`,
           role: "assistant" as const,
           content: data.completion,
+          citations: data.citations || [],
+          toolCalls: data.toolCalls || 0,
           created_at: new Date().toISOString(),
         }
         setConversation(prev => [...prev, aiMessage])
@@ -263,8 +271,36 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
                         message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
                       }`}
                     >
-                      <div className="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</div>
-                    </div>
+                            <div className="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</div>
+                            
+                            {/* Display citations if available */}
+                            {message.citations && message.citations.length > 0 && (
+                              <div className="mt-3 pt-3 border-t border-gray-200">
+                                <div className="text-xs font-semibold text-gray-600 mb-2">
+                                  📚 Sources ({message.citations.length}):
+                                </div>
+                                <div className="space-y-1">
+                                  {message.citations.map((citation, index) => (
+                                    <div key={index} className="text-xs">
+                                      <a 
+                                        href={citation.url} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 hover:text-blue-800 underline"
+                                      >
+                                        {index + 1}. {citation.title}
+                                      </a>
+                                      {citation.publishedDate && (
+                                        <span className="text-gray-500 ml-2">
+                                          ({new Date(citation.publishedDate).toLocaleDateString()})
+                                        </span>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
                     {message.role === "user" && (
                       <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-accent">
                         <svg

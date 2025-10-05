@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     const { data: profile } = await supabase.from("profiles").select("*").eq("id", userId).single()
 
     // Generate emergency guidance using Grok-4-fast-reasoning for critical decisions
-    const { text } = await generateText({
+    const { text, toolCalls, toolResults } = await generateText({
       model: "xai/grok-4-fast-reasoning",
       prompt: `You are an emergency medical AI assistant for rural healthcare workers in India. Provide immediate, actionable guidance for this emergency situation.
 
@@ -76,7 +76,6 @@ IMPORTANT: This is for emergency guidance only. Always prioritize patient safety
       tools: {
         emergencyWebSearch,
       },
-      stopWhen: stepCountIs(3), // Allow up to 3 reasoning steps
     })
 
     // Save emergency consultation to database
@@ -95,7 +94,23 @@ IMPORTANT: This is for emergency guidance only. Always prioritize patient safety
       console.error("Error saving emergency consultation to database:", error)
     }
 
-    return Response.json({ guidance: text })
+    // Extract citations from web search results
+    const citations = toolResults?.flatMap(result => {
+      if (result.toolName === 'emergencyWebSearch' && Array.isArray(result)) {
+        return result.map((item: any) => ({
+          title: item.title,
+          url: item.url,
+          publishedDate: item.publishedDate
+        }))
+      }
+      return []
+    }) || []
+
+    return Response.json({ 
+      guidance: text,
+      citations: citations,
+      toolCalls: toolCalls?.length || 0
+    })
   } catch (error) {
     console.error("[v0] Emergency guidance error:", error)
     return new Response("Internal Server Error", { status: 500 })

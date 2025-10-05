@@ -5,9 +5,9 @@ import { getExaClient } from './exa-client'
 export const medicalWebSearch = tool({
   description: 'Search the web for up-to-date medical information from trusted sources like WHO, CDC, NIH, ICMR, and medical journals',
   parameters: z.object({
-    query: z.string().min(1).max(200).describe('The medical search query'),
+    query: z.string().min(1).max(100).describe('The medical search query'),
   }),
-  execute: async ({ query }) => {
+  execute: async ({ query }: { query: string }) => {
     const exa = getExaClient()
     
     // Target trusted medical sources for healthcare workers
@@ -40,13 +40,12 @@ export const medicalWebSearch = tool({
       return results.map(result => ({
         title: result.title,
         url: result.url,
-        content: result.text?.slice(0, 1500) || '', // Take first 1500 characters
+        content: result.text?.slice(0, 1000) || '', // Take first 1000 characters as per docs
         publishedDate: result.publishedDate,
         highlights: result.highlights || [],
       }))
     } catch (error) {
       console.error('[v0] Exa web search error:', error)
-      // Return empty array instead of throwing to prevent API failures
       return []
     }
   },
@@ -55,9 +54,9 @@ export const medicalWebSearch = tool({
 export const emergencyWebSearch = tool({
   description: 'Search for emergency medical protocols and latest emergency care guidelines',
   parameters: z.object({
-    query: z.string().min(1).max(200).describe('The emergency medical search query'),
+    query: z.string().min(1).max(100).describe('The emergency medical search query'),
   }),
-  execute: async ({ query }) => {
+  execute: async ({ query }: { query: string }) => {
     const exa = getExaClient()
     
     // Focus on emergency medicine and critical care sources
@@ -77,7 +76,7 @@ export const emergencyWebSearch = tool({
     try {
       const { results } = await exa.searchAndContents(query, {
         livecrawl: 'always',
-        numResults: 2,
+        numResults: 3,
         includeDomains: emergencyDomains,
         useAutoprompt: true,
         text: true,

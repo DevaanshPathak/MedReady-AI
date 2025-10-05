@@ -4,6 +4,7 @@ import { DashboardNav } from "@/components/dashboard-nav"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Reveal } from "@/components/reveal"
 import Link from "next/link"
 
 export default async function LearnPage() {
@@ -31,12 +32,16 @@ export default async function LearnPage() {
       <DashboardNav />
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">Learning Modules</h1>
-          <p className="text-muted-foreground">Explore courses designed for healthcare professionals</p>
+          <Reveal as="h1" className="text-3xl font-bold tracking-tight" variant="down">
+            Learning Modules
+          </Reveal>
+          <Reveal as="p" className="text-muted-foreground" delay="xs">
+            Explore courses designed for healthcare professionals
+          </Reveal>
         </div>
 
         {/* Filter/Category Section */}
-        <div className="mb-6 flex flex-wrap gap-2">
+        <Reveal className="mb-6 flex flex-wrap gap-2" variant="scale" delay="sm">
           <Badge variant="outline" className="cursor-pointer hover:bg-accent">
             All Modules
           </Badge>
@@ -52,18 +57,21 @@ export default async function LearnPage() {
           <Badge variant="outline" className="cursor-pointer hover:bg-accent">
             Infectious Diseases
           </Badge>
-        </div>
+        </Reveal>
 
         {/* Modules Grid */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {modules && modules.length > 0 ? (
-            modules.map((module) => {
+            modules.map((module, index) => {
               const progress = progressMap.get(module.id)
               const isStarted = !!progress
               const completionPercent = progress?.completion_percent || 0
+              const delays: Array<"none" | "xs" | "sm" | "md" | "lg" | "xl"> = ["none", "xs", "sm", "md", "lg", "xl"]
+              const delay = delays[index % delays.length]
 
               return (
-                <Card key={module.id} className="flex flex-col">
+                <Reveal key={module.id} delay={delay}>
+                  <Card className="flex flex-col h-full">
                   <CardHeader>
                     <div className="mb-2 flex items-start justify-between">
                       <Badge variant={module.difficulty === "beginner" ? "secondary" : "default"}>
@@ -96,10 +104,12 @@ export default async function LearnPage() {
                     </Button>
                   </CardContent>
                 </Card>
+                </Reveal>
               )
             })
           ) : (
-            <Card className="md:col-span-2 lg:col-span-3">
+            <Reveal delay="none">
+              <Card className="md:col-span-2 lg:col-span-3">
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -117,6 +127,7 @@ export default async function LearnPage() {
                 <p className="text-center text-sm text-muted-foreground">Check back soon for new learning content</p>
               </CardContent>
             </Card>
+            </Reveal>
           )}
         </div>
       </main>

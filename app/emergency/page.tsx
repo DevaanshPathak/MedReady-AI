@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { DashboardNav } from "@/components/dashboard-nav"
 import { EmergencyAIAssistant } from "@/components/emergency-ai-assistant"
+import { Reveal } from "@/components/reveal"
 
 export default async function EmergencyPage() {
   const supabase = await createClient()
@@ -25,17 +26,22 @@ export default async function EmergencyPage() {
       <DashboardNav />
       <div className="container mx-auto px-4 py-6 max-w-7xl">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-foreground mb-2">Emergency Response Orchestrator</h1>
-          <p className="text-muted-foreground">Real-time emergency alerts and response coordination</p>
+          <Reveal as="h1" className="text-2xl font-bold text-foreground mb-2" variant="down">
+            Emergency Response Orchestrator
+          </Reveal>
+          <Reveal as="p" className="text-muted-foreground" delay="xs">
+            Real-time emergency alerts and response coordination
+          </Reveal>
         </div>
 
-        <div className="mb-6">
+        <Reveal className="mb-6" delay="sm">
           <EmergencyAIAssistant userId={user.id} />
-        </div>
+        </Reveal>
 
         {activeAlerts.length > 0 && (
-          <div className="mb-6 p-4 bg-destructive/10 border-2 border-destructive/30 rounded-lg">
-            <div className="flex items-center gap-2 mb-3">
+          <Reveal className="mb-6" delay="md" variant="left">
+            <div className="p-4 bg-destructive/10 border-2 border-destructive/30 rounded-lg">
+              <div className="flex items-center gap-2 mb-3">
               <svg className="w-5 h-5 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
                   strokeLinecap="round"
@@ -83,12 +89,14 @@ export default async function EmergencyPage() {
                   </div>
                 </div>
               ))}
+              </div>
             </div>
-          </div>
+          </Reveal>
         )}
 
         <div className="grid gap-6 md:grid-cols-3 mb-6">
-          <div className="bg-card border border-border rounded-lg p-6">
+          <Reveal delay="none">
+            <div className="bg-card border border-border rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-foreground">Active Alerts</h3>
               <svg className="w-5 h-5 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -103,8 +111,10 @@ export default async function EmergencyPage() {
             <div className="text-3xl font-bold text-destructive mb-1">{activeAlerts.length}</div>
             <p className="text-sm text-muted-foreground">Requiring immediate attention</p>
           </div>
+          </Reveal>
 
-          <div className="bg-card border border-border rounded-lg p-6">
+          <Reveal delay="xs">
+            <div className="bg-card border border-border rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-foreground">Resolved</h3>
               <svg className="w-5 h-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -119,8 +129,10 @@ export default async function EmergencyPage() {
             <div className="text-3xl font-bold text-success mb-1">{resolvedAlerts.length}</div>
             <p className="text-sm text-muted-foreground">Successfully handled</p>
           </div>
+          </Reveal>
 
-          <div className="bg-card border border-border rounded-lg p-6">
+          <Reveal delay="sm">
+            <div className="bg-card border border-border rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-foreground">Response Time</h3>
               <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -135,10 +147,12 @@ export default async function EmergencyPage() {
             <div className="text-3xl font-bold text-primary mb-1">12m</div>
             <p className="text-sm text-muted-foreground">Average response time</p>
           </div>
+          </Reveal>
         </div>
 
-        <div className="bg-card border border-border rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Recent Emergency History</h2>
+        <Reveal delay="md">
+          <div className="bg-card border border-border rounded-lg p-6">
+            <h2 className="text-lg font-semibold text-foreground mb-4">Recent Emergency History</h2>
           <div className="space-y-3">
             {resolvedAlerts.length > 0 ? (
               resolvedAlerts.slice(0, 10).map((alert: any) => (
@@ -164,6 +178,7 @@ export default async function EmergencyPage() {
             )}
           </div>
         </div>
+        </Reveal>
       </div>
     </div>
   )

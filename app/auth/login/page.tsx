@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { MedReadyLogo } from "@/components/medready-logo"
+import { Reveal } from "@/components/reveal"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -43,14 +44,15 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/50 p-4">
       <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
+        <Reveal className="mb-8 text-center" variant="down">
           <Link href="/">
             <MedReadyLogo size="md" />
           </Link>
-        </div>
+        </Reveal>
 
-        <Card>
-          <CardHeader>
+        <Reveal delay="sm">
+          <Card>
+            <CardHeader>
             <CardTitle className="text-2xl">Welcome Back</CardTitle>
             <CardDescription>Sign in to your account to continue learning</CardDescription>
           </CardHeader>
@@ -92,6 +94,7 @@ export default function LoginPage() {
             </div>
           </CardContent>
         </Card>
+        </Reveal>
       </div>
     </div>
   )

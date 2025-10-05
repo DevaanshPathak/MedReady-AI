@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { DashboardNav } from "@/components/dashboard-nav"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Reveal } from "@/components/reveal"
 import Link from "next/link"
 
 export default async function DashboardPage() {
@@ -41,26 +42,32 @@ export default async function DashboardPage() {
       <DashboardNav />
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">
+          <Reveal as="h1" className="text-3xl font-bold tracking-tight" variant="down">
             Welcome back, {profile?.full_name || "Healthcare Worker"}
-          </h1>
-          <p className="text-muted-foreground">Continue your learning journey and track your progress</p>
+          </Reveal>
+          <Reveal as="p" className="text-muted-foreground" delay="xs">
+            Continue your learning journey and track your progress
+          </Reveal>
         </div>
 
         {/* Emergency Alerts */}
         {alerts && alerts.length > 0 && (
           <div className="mb-8 space-y-3">
-            {alerts.map((alert) => (
-              <div
+            {alerts.map((alert, index) => (
+              <Reveal
                 key={alert.id}
-                className={cn(
-                  "rounded-lg border p-4",
-                  alert.severity === "critical" && "border-destructive bg-destructive/10",
-                  alert.severity === "warning" && "border-[hsl(var(--alert-orange))] bg-[hsl(var(--alert-orange))]/10",
-                  alert.severity === "info" && "border-primary bg-primary/10",
-                )}
+                delay={index === 0 ? "none" : index === 1 ? "xs" : "sm"}
+                variant="left"
               >
-                <div className="flex items-start gap-3">
+                <div
+                  className={cn(
+                    "rounded-lg border p-4",
+                    alert.severity === "critical" && "border-destructive bg-destructive/10",
+                    alert.severity === "warning" && "border-[hsl(var(--alert-orange))] bg-[hsl(var(--alert-orange))]/10",
+                    alert.severity === "info" && "border-primary bg-primary/10",
+                  )}
+                >
+                  <div className="flex items-start gap-3">
                   <div className="mt-0.5">
                     {alert.severity === "critical" && (
                       <svg
@@ -119,14 +126,16 @@ export default async function DashboardPage() {
                     )}
                   </div>
                 </div>
-              </div>
+                </div>
+              </Reveal>
             ))}
           </div>
         )}
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {/* Quick Stats */}
-          <Card>
+          <Reveal delay="none">
+            <Card>
             <CardHeader>
               <CardTitle>Learning Progress</CardTitle>
               <CardDescription>Your overall completion rate</CardDescription>
@@ -141,8 +150,10 @@ export default async function DashboardPage() {
               <p className="mt-2 text-sm text-muted-foreground">{progressData?.length || 0} modules in progress</p>
             </CardContent>
           </Card>
+          </Reveal>
 
-          <Card>
+          <Reveal delay="xs">
+            <Card>
             <CardHeader>
               <CardTitle>Certifications</CardTitle>
               <CardDescription>Earned credentials</CardDescription>
@@ -152,8 +163,10 @@ export default async function DashboardPage() {
               <p className="mt-2 text-sm text-muted-foreground">Complete modules to earn certificates</p>
             </CardContent>
           </Card>
+          </Reveal>
 
-          <Card>
+          <Reveal delay="sm">
+            <Card>
             <CardHeader>
               <CardTitle>Deployment Opportunities</CardTitle>
               <CardDescription>Available positions</CardDescription>
@@ -163,20 +176,25 @@ export default async function DashboardPage() {
               <p className="mt-2 text-sm text-muted-foreground">Matching your skills</p>
             </CardContent>
           </Card>
+          </Reveal>
         </div>
 
         {/* Continue Learning */}
         <div className="mt-8">
-          <div className="mb-4 flex items-center justify-between">
+          <Reveal className="mb-4 flex items-center justify-between" delay="md">
             <h2 className="text-2xl font-bold tracking-tight">Continue Learning</h2>
             <Button asChild variant="outline">
               <Link href="/learn">View All Modules</Link>
             </Button>
-          </div>
+          </Reveal>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {progressData && progressData.length > 0 ? (
-              progressData.map((progress) => (
-                <Card key={progress.id}>
+              progressData.map((progress, index) => (
+                <Reveal
+                  key={progress.id}
+                  delay={index === 0 ? "none" : index === 1 ? "xs" : "sm"}
+                >
+                  <Card>
                   <CardHeader>
                     <CardTitle className="line-clamp-1">{progress.modules?.title}</CardTitle>
                     <CardDescription className="line-clamp-2">{progress.modules?.description}</CardDescription>
@@ -199,9 +217,11 @@ export default async function DashboardPage() {
                     </div>
                   </CardContent>
                 </Card>
+                </Reveal>
               ))
             ) : (
-              <Card className="md:col-span-2 lg:col-span-3">
+              <Reveal delay="none">
+                <Card className="md:col-span-2 lg:col-span-3">
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -224,6 +244,7 @@ export default async function DashboardPage() {
                   </Button>
                 </CardContent>
               </Card>
+              </Reveal>
             )}
           </div>
         </div>

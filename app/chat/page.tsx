@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { DashboardNav } from "@/components/dashboard-nav"
 import { ChatInterface } from "@/components/chat-interface"
+import { Reveal } from "@/components/reveal"
 
 export default async function ChatPage() {
   const supabase = await createClient()

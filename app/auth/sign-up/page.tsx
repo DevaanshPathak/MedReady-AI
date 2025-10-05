@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { MedReadyLogo } from "@/components/medready-logo"
+import { Reveal } from "@/components/reveal"
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("")
@@ -60,14 +61,15 @@ export default function SignUpPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/50 p-4">
       <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
+        <Reveal className="mb-8 text-center" variant="down">
           <Link href="/">
             <MedReadyLogo size="md" />
           </Link>
-        </div>
+        </Reveal>
 
-        <Card>
-          <CardHeader>
+        <Reveal delay="sm">
+          <Card>
+            <CardHeader>
             <CardTitle className="text-2xl">Create Account</CardTitle>
             <CardDescription>Join MedReady AI to start your learning journey</CardDescription>
           </CardHeader>
@@ -158,6 +160,7 @@ export default function SignUpPage() {
             </div>
           </CardContent>
         </Card>
+        </Reveal>
       </div>
     </div>
   )

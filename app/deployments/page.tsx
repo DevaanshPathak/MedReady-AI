@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import { DashboardNav } from "@/components/dashboard-nav"
 import { AIDeploymentRecommendations } from "@/components/ai-deployment-recommendations"
+import { Reveal } from "@/components/reveal"
 
 export default async function DeploymentsPage() {
   const supabase = await createClient()
@@ -36,14 +37,17 @@ export default async function DeploymentsPage() {
       <DashboardNav />
       <div className="container mx-auto px-4 py-6 max-w-7xl">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-foreground mb-2">Rural Deployment Intelligence</h1>
-          <p className="text-muted-foreground">
+          <Reveal as="h1" className="text-2xl font-bold text-foreground mb-2" variant="down">
+            Rural Deployment Intelligence
+          </Reveal>
+          <Reveal as="p" className="text-muted-foreground" delay="xs">
             AI-powered deployment recommendations based on your skills and regional needs
-          </p>
+          </Reveal>
         </div>
 
         {userDeployment && (
-          <div className="mb-6 p-4 bg-primary/10 border border-primary/20 rounded-lg">
+          <Reveal className="mb-6" delay="sm" variant="scale">
+            <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="font-semibold text-foreground mb-1">Current Deployment</h3>
@@ -58,14 +62,16 @@ export default async function DeploymentsPage() {
               <span className="px-3 py-1 bg-success/20 text-success text-xs font-medium rounded-full">Active</span>
             </div>
           </div>
+          </Reveal>
         )}
 
-        <div className="mb-6">
+        <Reveal className="mb-6" delay="md">
           <AIDeploymentRecommendations userId={user.id} />
-        </div>
+        </Reveal>
 
         <div className="grid gap-6 md:grid-cols-2 mb-8">
-          <div className="bg-card border border-border rounded-lg p-6">
+          <Reveal delay="none">
+            <div className="bg-card border border-border rounded-lg p-6">
             <h2 className="text-lg font-semibold text-foreground mb-4">Recommended Deployments</h2>
             <div className="space-y-4">
               {recommendations && recommendations.length > 0 ? (
@@ -97,8 +103,10 @@ export default async function DeploymentsPage() {
               )}
             </div>
           </div>
+          </Reveal>
 
-          <div className="bg-card border border-border rounded-lg p-6">
+          <Reveal delay="xs">
+            <div className="bg-card border border-border rounded-lg p-6">
             <h2 className="text-lg font-semibold text-foreground mb-4">Active Deployments</h2>
             <div className="space-y-3">
               {deployments && deployments.length > 0 ? (
@@ -130,9 +138,11 @@ export default async function DeploymentsPage() {
               )}
             </div>
           </div>
+          </Reveal>
         </div>
 
-        <div className="bg-card border border-border rounded-lg p-6">
+        <Reveal delay="sm">
+          <div className="bg-card border border-border rounded-lg p-6">
           <h2 className="text-lg font-semibold text-foreground mb-4">Deployment Impact</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center p-4 bg-muted/50 rounded-lg">
@@ -157,6 +167,7 @@ export default async function DeploymentsPage() {
             </div>
           </div>
         </div>
+        </Reveal>
       </div>
     </div>
   )

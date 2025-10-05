@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
+import { Reveal } from "@/components/reveal"
 
 export default async function ProfilePage() {
   const supabase = await createClient()
@@ -27,11 +28,16 @@ export default async function ProfilePage() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-6 max-w-4xl">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-foreground mb-2">Profile</h1>
-          <p className="text-muted-foreground">Manage your account and view your progress</p>
+          <Reveal as="h1" className="text-2xl font-bold text-foreground mb-2" variant="down">
+            Profile
+          </Reveal>
+          <Reveal as="p" className="text-muted-foreground" delay="xs">
+            Manage your account and view your progress
+          </Reveal>
         </div>
 
-        <div className="bg-card border border-border rounded-lg p-6 mb-6">
+        <Reveal delay="sm">
+          <div className="bg-card border border-border rounded-lg p-6 mb-6">
           <div className="flex items-start justify-between mb-6">
             <div>
               <h2 className="text-xl font-semibold text-foreground mb-1">
@@ -67,9 +73,11 @@ export default async function ProfilePage() {
             </div>
           </div>
         </div>
+        </Reveal>
 
         <div className="grid gap-6 md:grid-cols-3 mb-6">
-          <div className="bg-card border border-border rounded-lg p-6">
+          <Reveal delay="none">
+            <div className="bg-card border border-border rounded-lg p-6">
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-semibold text-foreground">Modules Completed</h3>
               <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -83,8 +91,10 @@ export default async function ProfilePage() {
             </div>
             <div className="text-3xl font-bold text-primary">{completedModules?.length || 0}</div>
           </div>
+          </Reveal>
 
-          <div className="bg-card border border-border rounded-lg p-6">
+          <Reveal delay="xs">
+            <div className="bg-card border border-border rounded-lg p-6">
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-semibold text-foreground">Active Certificates</h3>
               <svg className="w-5 h-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -98,8 +108,10 @@ export default async function ProfilePage() {
             </div>
             <div className="text-3xl font-bold text-success">{certifications?.length || 0}</div>
           </div>
+          </Reveal>
 
-          <div className="bg-card border border-border rounded-lg p-6">
+          <Reveal delay="sm">
+            <div className="bg-card border border-border rounded-lg p-6">
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-semibold text-foreground">Member Since</h3>
               <svg className="w-5 h-5 text-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -117,9 +129,11 @@ export default async function ProfilePage() {
                 : "N/A"}
             </div>
           </div>
+          </Reveal>
         </div>
 
-        <div className="bg-card border border-border rounded-lg p-6">
+        <Reveal delay="md">
+          <div className="bg-card border border-border rounded-lg p-6">
           <h2 className="text-lg font-semibold text-foreground mb-4">Account Settings</h2>
           <div className="space-y-3">
             <button className="w-full py-3 px-4 bg-muted hover:bg-muted/80 text-foreground rounded-lg text-left transition-colors">
@@ -148,6 +162,7 @@ export default async function ProfilePage() {
             </button>
           </div>
         </div>
+        </Reveal>
       </div>
     </div>
   )

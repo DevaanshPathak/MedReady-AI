@@ -1,43 +1,174 @@
 # MedReady AI – Copilot Instructions
 
-## Project snapshot
-- Next.js App Router with TypeScript; styling via Tailwind and shadcn/ui primitives under `components/ui`.
-- Core layouts live in `app/**` server components; client-only widgets (chat, emergency assistant, module player) sit in `components/` and are marked with `"use client"`.
-- Supabase handles auth + data; shared helpers for browser/server clients are in `lib/supabase/`.
+## Project Snapshot
+- **Stack**: Next.js 15 App Router, TypeScript, Tailwind CSS v4, Supabase (PostgreSQL + Auth), shadcn/ui components
+- **AI**: Vercel AI SDK with xAI Grok models (`xai/grok-4-fast-reasoning`), Exa.ai for medical knowledge search
+- **Package Manager**: pnpm (enforced via `packageManager` in package.json)
+- **Architecture**: Server components in `app/**/`, client components in `components/` (marked `"use client"`), API routes in `app/api/**/route.ts`
 
-## Build & run
-- Use pnpm (lockfile present): `pnpm install`, `pnpm dev`, `pnpm build`, `pnpm lint`.
-- `next.config.mjs` skips lint/type failures during build—run `pnpm lint` locally before committing to catch regressions.
+## Build & Development
+```bash
+pnpm install          # Install dependencies
+pnpm dev              # Start dev server (localhost:3000)
+pnpm build            # Production build
+pnpm lint             # Run ESLint
+```
+- **Note**: `next.config.mjs` sets `ignoreDuringBuilds: true` for ESLint/TypeScript—always run `pnpm lint` locally before committing
+- No automated tests exist; manually verify auth, chat, module progression, emergency assistant flows
 
-## Auth & Supabase usage
-- Server components/pages create an authenticated client with `createClient` from `lib/supabase/server` and redirect unauthenticated users using `redirect("/auth/login")`.
-- Client components call `lib/supabase/client`; never import `@supabase/supabase-js` directly.
-- Middleware (`middleware.ts` + `lib/supabase/middleware.ts`) refreshes sessions and blocks access to `/dashboard`, `/learn`, `/chat`, `/certifications`, `/deployments`; keep new protected routes inside that matcher list.
+## Authentication & Supabase Patterns
 
-## Data model quirks
-- SQL migrations (`scripts/001_create_schema.sql` etc.) define canonical tables: `profiles`, `modules`, `progress`, `assessments`, `deployments`, `certifications`, `chat_messages`, etc.
-- Several pages/API routes still reference legacy names (`user_profiles`, `module_progress`, `learning_modules`, `assessment_results`, `emergency_alerts.status`). Confirm actual table names/columns before writing queries and align with the migrations when possible.
-- RLS is enabled everywhere—API routes must authenticate via Supabase before accessing tables or inserts will fail silently.
+### Server Components (app/**/page.tsx)
+```typescript
+import { createClient } from "@/lib/supabase/server"
+import { redirect } from "next/navigation"
 
-## AI workflows
-- `/app/api/completion` is the live chat endpoint: validates the Supabase user, stores both sides of the conversation in `chat_messages`, and streams `gpt-4o` responses. Requests expect `prompt`, `userId`, `category`, plus optional role/specialization/location.
-- `/app/api/chat` still exists for the older `useChat` flow; keep payload handling consistent if you revive it.
-- Structured generators (`generate-module-content`, `generate-assessment`, `deployment-recommendations`, `emergency-guidance`) wrap Grok models with zod schemas; follow that pattern for new AI endpoints and persist results to the related tables (`module_content_cache`, `assessments`, `emergency_consultations`, etc.).
+const supabase = await createClient()
+const { data: { user } } = await supabase.auth.getUser()
+if (!user) redirect("/auth/login")
+```
 
-## UI conventions
-- Reuse shadcn components from `components/ui`; compose utility classes with the `cn` helper in `lib/utils`.
-- Global theming comes from `ThemeProvider` in `app/layout.tsx`; new layouts should remain inside this provider to inherit dark/light switching.
-- `DashboardNav` provides the shared chrome for authenticated views—import it on any new dashboard-style route for consistency.
+### Client Components (components/**)
+```typescript
+import { createClient } from "@/lib/supabase/client"
 
-## Environment & integrations
-- Required env vars: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL` (local signup), Vercel AI keys for GPT‑4o and xAI Grok models, and `EXA_API_KEY` for `lib/exa-client`.
-- Exa integration targets trusted medical domains (see `lib/exa-client.ts`); handle missing keys by surfacing actionable errors instead of crashing.
+const supabase = createClient()
+// Never import @supabase/supabase-js directly
+```
 
-## Database workflow
-- Apply SQL files in `scripts/` sequentially via Supabase SQL editor (001 → 009). `003_create_profile_trigger.sql` auto-creates `profiles` rows on signup; `009_create_test_users.sql` seeds demo accounts (ensure the `pgcrypto` extension for `crypt`).
-- Keep schema changes mirrored in both migrations and TypeScript types under `lib/types.ts` to prevent drift.
+### Middleware Protection
+- `middleware.ts` + `lib/supabase/middleware.ts` protect: `/dashboard`, `/learn`, `/chat`, `/certifications`, `/deployments`
+- Add new protected routes to `protectedPaths` array in `lib/supabase/middleware.ts`
 
-## Debugging tips
-- Console logging is already heavy in API routes—trim or gate logs when shipping to production.
-- When RLS blocks a query, check the Supabase logs and ensure `auth.getUser()` returned the same `userId` you’re using in the request body.
-- No automated tests exist; smoke-test critical flows (signup/login, chat, module progression, emergency assistant) whenever touching their APIs.
+## Database Schema & Table Name Gotchas
+
+**Canonical Tables** (from `scripts/001_create_schema.sql`):
+- `profiles` (NOT `user_profiles`) – user info
+- `modules` (NOT `learning_modules`) – training content  
+- `progress` (NOT `module_progress`) – user completion tracking
+- `assessments`, `assessment_attempts` – quizzes
+- `certifications` – digital certificates
+- `deployments` – rural job postings
+- `chat_sessions`, `chat_messages` – AI chat history
+
+**Legacy Name References**: Some API routes/pages still use old names (`user_profiles`, `learning_modules`, `assessment_results`, `emergency_alerts.status`). Always verify actual table names against migration files before writing queries.
+
+**RLS Enforcement**: Row-level security is enabled on all tables. API routes MUST authenticate with `supabase.auth.getUser()` before queries or writes will silently fail.
+
+**Profile Auto-Creation**: `scripts/003_create_profile_trigger.sql` automatically creates `profiles` rows on signup via trigger—no manual insertion needed.
+
+## AI Workflows
+
+### Chat Endpoint (`app/api/completion/route.ts`)
+- **Primary**: `/api/completion` – active chat system, stores messages in `chat_messages`, returns streaming responses
+- **Legacy**: `/api/chat` – older flow using `useChat`, kept for compatibility
+- **Request payload**: `{ prompt, userId, category, role?, specialization?, location? }`
+- **Model**: `xai/grok-4-fast-reasoning` via Vercel AI SDK
+- **Tools**: `medicalWebSearch` from `lib/web-search-tool.ts` integrates Exa.ai for real-time medical knowledge
+- **System prompts**: Category-specific prompts in route file (general, emergency, maternal, pediatric, infectious, drugs)
+
+### Structured Generators (Vercel AI SDK + Zod)
+All use `generateObject()` with xAI Grok models:
+- `generate-module-content` → `module_content_cache`
+- `generate-assessment` → `assessments`
+- `deployment-recommendations` → returns structured JSON
+- `emergency-guidance` → `emergency_consultations`
+
+**Pattern for new endpoints**:
+```typescript
+import { generateObject } from "ai"
+import { z } from "zod"
+
+const schema = z.object({ /* ... */ })
+const { object } = await generateObject({
+  model: "xai/grok-4-fast-reasoning",
+  schema,
+  prompt: "...",
+  temperature: 0.8,
+})
+```
+
+### Exa.ai Medical Search
+- Client: `lib/exa-client.ts` (`getExaClient()`)
+- Tool: `lib/web-search-tool.ts` (`medicalWebSearch`, `emergencyWebSearch`)
+- Trusted domains: WHO, CDC, NIH, ICMR (India), MOHFW (India), medical journals
+- Handle missing `EXA_API_KEY` gracefully—return empty results or actionable error
+
+## UI & Styling Conventions
+
+### Component Reuse
+- Import shadcn primitives from `components/ui/` (Button, Card, Dialog, etc.)
+- Compose classes with `cn()` helper from `lib/utils`
+- `DashboardNav` component provides consistent chrome for authenticated views
+
+### Theming
+- `ThemeProvider` in `app/layout.tsx` enables light/dark mode
+- System preference sync enabled
+- Custom palette: Medical Blue `#0066CC`, Healthcare Green `#00A86B`, Alert Orange `#FF6B35`
+
+### Markdown Rendering in Chat
+`components/chat-interface.tsx` uses `react-markdown` + `remark-gfm` + `react-syntax-highlighter`:
+```tsx
+<ReactMarkdown remarkPlugins={[remarkGfm]}>
+  {content}
+</ReactMarkdown>
+```
+
+## Environment Variables
+
+**Required**:
+```env
+NEXT_PUBLIC_SUPABASE_URL=           # Supabase project URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY=      # Supabase anon key
+NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL=  # Local signup redirect
+EXA_API_KEY=                        # Exa.ai for medical search
+POSTGRES_URL=                       # Direct DB connection (Vercel)
+```
+
+**Vercel AI SDK** (auto-configured via Vercel AI Gateway or direct keys)
+
+## Database Setup Workflow
+
+1. **Apply migrations sequentially** in Supabase SQL editor:
+   - `001_create_schema.sql` – core tables
+   - `003_create_profile_trigger.sql` – auto-create profiles on signup
+   - `005_create_chat_tables.sql` – chat sessions/messages
+   - `008_add_ai_tables.sql` – AI cache tables
+   - `009_create_test_users.sql` – seed demo accounts (requires `pgcrypto` extension for `crypt()`)
+
+2. **Test users** (from 009):
+   - `admin@medready.test` / `admin123`
+   - `worker@medready.test` / `worker123`
+   - `institution@medready.test` / `institution123`
+
+3. **Keep TypeScript types in sync**: Update `lib/types.ts` when schema changes
+
+## Common Debugging Patterns
+
+### RLS Failures
+- Check Supabase logs → "permission denied for table X"
+- Verify `auth.getUser()` returns user with matching `userId` in request body
+- Confirm user session is valid (middleware refreshes on each request)
+
+### API Route Logs
+- Heavy console logging already present in all API routes
+- Trim or gate logs before production deployment
+- Look for: "AI generated response:", "Executing medical web search", auth errors
+
+### Chat Not Loading
+- Verify `chat_sessions` and `chat_messages` tables exist
+- Check `currentSessionId` prop passed to `ChatInterface`
+- Inspect browser console for Supabase errors
+
+## Key Files Reference
+
+| File | Purpose |
+|------|---------|
+| `lib/supabase/{server,client,middleware}.ts` | Supabase client factories |
+| `lib/web-search-tool.ts` | Exa.ai tool integration for AI |
+| `lib/exa-client.ts` | Exa client singleton |
+| `lib/types.ts` | TypeScript types mirroring DB schema |
+| `app/api/completion/route.ts` | Primary chat endpoint |
+| `components/chat-interface.tsx` | Main chat UI (client component) |
+| `components/dashboard-nav.tsx` | Shared authenticated layout chrome |
+| `scripts/001_create_schema.sql` | Canonical table definitions |

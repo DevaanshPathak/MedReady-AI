@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import Link from "next/link"
+import { Reveal } from "@/components/reveal"
 
 export default async function CertificationsPage() {
   const supabase = await createClient()
@@ -35,12 +36,17 @@ export default async function CertificationsPage() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-6 max-w-7xl">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-foreground mb-2">Digital Certifications</h1>
-          <p className="text-muted-foreground">Blockchain-verified healthcare credentials and achievements</p>
+          <Reveal as="h1" className="text-2xl font-bold text-foreground mb-2" variant="down">
+            Digital Certifications
+          </Reveal>
+          <Reveal as="p" className="text-muted-foreground" delay="xs">
+            Blockchain-verified healthcare credentials and achievements
+          </Reveal>
         </div>
 
         <div className="grid gap-6 md:grid-cols-3 mb-6">
-          <div className="bg-card border border-border rounded-lg p-6">
+          <Reveal delay="none">
+            <div className="bg-card border border-border rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-foreground">Active Certificates</h3>
               <svg className="w-5 h-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -55,8 +61,10 @@ export default async function CertificationsPage() {
             <div className="text-3xl font-bold text-success mb-1">{activeCerts}</div>
             <p className="text-sm text-muted-foreground">Valid certifications</p>
           </div>
+          </Reveal>
 
-          <div className="bg-card border border-border rounded-lg p-6">
+          <Reveal delay="xs">
+            <div className="bg-card border border-border rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-foreground">Completed Modules</h3>
               <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -71,8 +79,10 @@ export default async function CertificationsPage() {
             <div className="text-3xl font-bold text-primary mb-1">{completedModules}</div>
             <p className="text-sm text-muted-foreground">Training completed</p>
           </div>
+          </Reveal>
 
-          <div className="bg-card border border-border rounded-lg p-6">
+          <Reveal delay="sm">
+            <div className="bg-card border border-border rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-foreground">Expiring Soon</h3>
               <svg className="w-5 h-5 text-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -87,10 +97,12 @@ export default async function CertificationsPage() {
             <div className="text-3xl font-bold text-warning mb-1">{expiringSoon}</div>
             <p className="text-sm text-muted-foreground">Renewal required</p>
           </div>
+          </Reveal>
         </div>
 
         {certifications && certifications.length > 0 ? (
-          <div className="bg-card border border-border rounded-lg p-6 mb-6">
+          <Reveal delay="md">
+            <div className="bg-card border border-border rounded-lg p-6 mb-6">
             <h2 className="text-lg font-semibold text-foreground mb-4">Your Certifications</h2>
             <div className="grid gap-4 md:grid-cols-2">
               {certifications.map((cert: any) => {
@@ -156,8 +168,10 @@ export default async function CertificationsPage() {
               })}
             </div>
           </div>
+          </Reveal>
         ) : (
-          <div className="bg-card border border-border rounded-lg p-12 text-center mb-6">
+          <Reveal delay="md">
+            <div className="bg-card border border-border rounded-lg p-12 text-center mb-6">
             <svg
               className="w-16 h-16 text-muted-foreground mx-auto mb-4"
               fill="none"
@@ -182,9 +196,11 @@ export default async function CertificationsPage() {
               Start Learning
             </Link>
           </div>
+          </Reveal>
         )}
 
-        <div className="bg-card border border-border rounded-lg p-6">
+        <Reveal delay="lg">
+          <div className="bg-card border border-border rounded-lg p-6">
           <h2 className="text-lg font-semibold text-foreground mb-4">Available Certifications</h2>
           <div className="grid gap-4 md:grid-cols-3">
             <div className="p-4 bg-muted/50 rounded-lg border border-border">
@@ -223,6 +239,7 @@ export default async function CertificationsPage() {
             </div>
           </div>
         </div>
+        </Reveal>
       </div>
     </div>
   )

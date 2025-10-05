@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { createClient } from "@/lib/supabase/client"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 
 interface ChatInterfaceProps {
   userId: string
@@ -46,7 +48,12 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
     }>
     toolCalls?: number
     created_at: string
-  }>>(initialMessages)
+  }>>(initialMessages.map(msg => ({
+    ...msg,
+    role: msg.role as "user" | "assistant",
+    citations: [],
+    toolCalls: 0
+  })))
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -271,7 +278,13 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
                         message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
                       }`}
                     >
-                            <div className="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</div>
+                            <div className="text-sm leading-relaxed prose prose-sm max-w-none prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-em:text-foreground prose-ul:text-foreground prose-ol:text-foreground prose-li:text-foreground prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline">
+                              <ReactMarkdown 
+                                remarkPlugins={[remarkGfm]}
+                              >
+                                {message.content}
+                              </ReactMarkdown>
+                            </div>
                             
                             {/* Display citations if available */}
                             {message.citations && message.citations.length > 0 && (

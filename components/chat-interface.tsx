@@ -55,18 +55,8 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
       category: selectedCategory,
     },
     onFinish: async (completion) => {
-      // Save assistant message to database
-      try {
-        await supabase.from("chat_messages").insert({
-          user_id: userId,
-          role: "assistant",
-          content: completion,
-          category: selectedCategory,
-        })
-      } catch (error) {
-        console.error("Error saving assistant message:", error)
-      }
-
+      // Database saving is now handled by the API
+      
       // Add the completion to conversation
       setConversation(prev => [...prev, {
         id: `assistant-${Date.now()}`,
@@ -111,17 +101,7 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
     }
     setConversation(prev => [...prev, userMessage])
 
-    // Save user message to database
-    try {
-      await supabase.from("chat_messages").insert({
-        user_id: userId,
-        role: "user",
-        content: prompt,
-        category: selectedCategory,
-      })
-    } catch (error) {
-      console.error("Error saving user message:", error)
-    }
+    // Database saving is now handled by the API
 
     // Submit to completion API using handleSubmit
     const syntheticSubmitEvent = new Event('submit') as any
@@ -142,17 +122,7 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
     }
     setConversation(prev => [...prev, userMessage])
 
-    // Save user message to database
-    try {
-      await supabase.from("chat_messages").insert({
-        user_id: userId,
-        role: "user",
-        content: input,
-        category: selectedCategory,
-      })
-    } catch (error) {
-      console.error("Error saving user message:", error)
-    }
+    // Database saving is now handled by the API
 
     // Submit to completion API - useCompletion will handle the input
     handleSubmit(e)

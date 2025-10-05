@@ -67,6 +67,20 @@ Format responses clearly with:
 - Warning signs to watch for
 - When to seek additional help`
 
+    // Save user message to database first
+    try {
+      await supabase.from("chat_messages").insert({
+        user_id: userId,
+        role: "user",
+        content: prompt,
+        category: category || "general",
+      })
+      console.log("Successfully saved user message to database")
+    } catch (error) {
+      console.error("Error saving user message to database:", error)
+      // Continue with the AI call even if database save fails
+    }
+
     const result = streamText({
       model: "gpt-4o",
       messages: [
@@ -81,6 +95,20 @@ Format responses clearly with:
       ],
       temperature: 0.7,
       maxTokens: 2000,
+      onFinish: async (completion) => {
+        // Save assistant message to database
+        try {
+          await supabase.from("chat_messages").insert({
+            user_id: userId,
+            role: "assistant",
+            content: completion,
+            category: category || "general",
+          })
+          console.log("Successfully saved assistant message to database")
+        } catch (error) {
+          console.error("Error saving assistant message to database:", error)
+        }
+      },
     })
 
     return result.toTextStreamResponse()

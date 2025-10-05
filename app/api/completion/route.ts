@@ -1,5 +1,6 @@
-import { streamText } from "ai"
+import { generateText, stepCountIs } from "ai"
 import { createClient } from "@/lib/supabase/server"
+import { medicalWebSearch } from "@/lib/web-search-tool"
 
 export const maxDuration = 30
 
@@ -69,49 +70,96 @@ Format responses clearly with:
 
     // Save user message to database first
     try {
-      await supabase.from("chat_messages").insert({
-        user_id: userId,
-        role: "user",
-        content: prompt,
-        category: category || "general",
-      })
-      console.log("Successfully saved user message to database")
+      // Create a chat session if it doesn't exist
+      const { data: session } = await supabase
+        .from("chat_sessions")
+        .select("id")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single()
+
+      let sessionId = session?.id
+      if (!sessionId) {
+        const { data: newSession } = await supabase
+          .from("chat_sessions")
+          .insert({
+            user_id: userId,
+            title: "General Chat",
+          })
+          .select("id")
+          .single()
+        sessionId = newSession?.id
+      }
+
+      if (sessionId) {
+        await supabase.from("chat_messages").insert({
+          session_id: sessionId,
+          role: "user",
+          content: prompt,
+        })
+        console.log("Successfully saved user message to database")
+      }
     } catch (error) {
       console.error("Error saving user message to database:", error)
       // Continue with the AI call even if database save fails
     }
 
-    const result = streamText({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: contextPrompt,
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      temperature: 0.7,
-      maxTokens: 2000,
-      onFinish: async (completion) => {
-        // Save assistant message to database
-        try {
-          await supabase.from("chat_messages").insert({
-            user_id: userId,
-            role: "assistant",
-            content: completion,
-            category: category || "general",
-          })
-          console.log("Successfully saved assistant message to database")
-        } catch (error) {
-          console.error("Error saving assistant message to database:", error)
-        }
-      },
-    })
+    console.log("About to call AI model with prompt:", prompt)
+    console.log("Context prompt:", contextPrompt)
+    
+          const { text } = await generateText({
+            model: "xai/grok-4-fast-reasoning",
+            prompt: `${contextPrompt}
 
-    return result.toTextStreamResponse()
+User Question: ${prompt}
+
+Note: If the user asks about recent medical guidelines, protocols, or current medical information, use the web search tool to find the most up-to-date information from trusted medical sources.`,
+            tools: {
+              medicalWebSearch,
+            },
+            stopWhen: stepCountIs(3), // Allow up to 3 reasoning steps
+            temperature: 0.7,
+          })
+
+    console.log("AI generated response:", text)
+
+    // Save assistant message to database
+    try {
+      const { data: session } = await supabase
+        .from("chat_sessions")
+        .select("id")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single()
+
+      let sessionId = session?.id
+      if (!sessionId) {
+        const { data: newSession } = await supabase
+          .from("chat_sessions")
+          .insert({
+            user_id: userId,
+            title: "General Chat",
+          })
+          .select("id")
+          .single()
+        sessionId = newSession?.id
+      }
+
+      if (sessionId) {
+        await supabase.from("chat_messages").insert({
+          session_id: sessionId,
+          role: "assistant",
+          content: text,
+        })
+        console.log("Successfully saved assistant message to database")
+      }
+    } catch (error) {
+      console.error("Error saving assistant message to database:", error)
+    }
+
+    return Response.json({ completion: text })
   } catch (error) {
     console.error("[v0] Completion API error:", error)
     return new Response("Internal Server Error", { status: 500 })

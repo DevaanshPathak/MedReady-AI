@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { useChat, useCompletion } from "@ai-sdk/react"
 import { createClient } from "@/lib/supabase/client"
 
 interface ChatInterfaceProps {
@@ -42,36 +41,15 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
     content: string
     created_at: string
   }>>(initialMessages)
+  const [input, setInput] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
-
-  const { completion, input, handleInputChange, handleSubmit, isLoading } = useCompletion({
-    api: "/api/completion",
-    body: {
-      userId,
-      userRole: profile?.role,
-      specialization: profile?.specialization,
-      location: profile?.location,
-      category: selectedCategory,
-    },
-    onFinish: async (completion) => {
-      // Database saving is now handled by the API
-      
-      // Add the completion to conversation
-      setConversation(prev => [...prev, {
-        id: `assistant-${Date.now()}`,
-        role: "assistant",
-        content: completion,
-        created_at: new Date().toISOString(),
-      }])
-    },
-  })
 
   // Debug logging
   console.log("Chat Interface Debug:", {
     conversation: conversation,
     conversationLength: conversation?.length,
-    completion,
     isLoading,
     input
   })
@@ -86,26 +64,57 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
 
 
   const handleQuickPrompt = async (prompt: string) => {
-    // Set the input using the useCompletion hook's handleInputChange
-    const syntheticEvent = {
-      target: { value: prompt }
-    } as React.ChangeEvent<HTMLInputElement>
-    handleInputChange(syntheticEvent)
-    
+    setInput(prompt)
+    await sendMessage(prompt)
+  }
+
+  const sendMessage = async (message: string) => {
+    if (!message.trim() || isLoading) return
+
+    setIsLoading(true)
+
     // Add user message to conversation immediately
     const userMessage = {
       id: `user-${Date.now()}`,
       role: "user" as const,
-      content: prompt,
+      content: message,
       created_at: new Date().toISOString(),
     }
     setConversation(prev => [...prev, userMessage])
 
-    // Database saving is now handled by the API
+    try {
+      const response = await fetch("/api/completion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: message,
+          userId,
+          userRole: profile?.role,
+          specialization: profile?.specialization,
+          location: profile?.location,
+          category: selectedCategory,
+        }),
+      })
 
-    // Submit to completion API using handleSubmit
-    const syntheticSubmitEvent = new Event('submit') as any
-    handleSubmit(syntheticSubmitEvent)
+      if (response.ok) {
+        const data = await response.json()
+        
+        // Add AI response to conversation
+        const aiMessage = {
+          id: `assistant-${Date.now()}`,
+          role: "assistant" as const,
+          content: data.completion,
+          created_at: new Date().toISOString(),
+        }
+        setConversation(prev => [...prev, aiMessage])
+      } else {
+        console.error("Failed to get AI response:", response.statusText)
+      }
+    } catch (error) {
+      console.error("Error getting AI response:", error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleFormSubmit = async (e?: React.FormEvent<HTMLFormElement>) => {
@@ -113,23 +122,12 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
 
     if (!input.trim()) return
 
-    // Add user message to conversation immediately
-    const userMessage = {
-      id: `user-${Date.now()}`,
-      role: "user" as const,
-      content: input,
-      created_at: new Date().toISOString(),
-    }
-    setConversation(prev => [...prev, userMessage])
-
-    // Database saving is now handled by the API
-
-    // Submit to completion API - useCompletion will handle the input
-    handleSubmit(e)
+    await sendMessage(input)
+    setInput("") // Clear input after sending
   }
 
   return (
-    <div className="flex w-full gap-6 p-6">
+    <div className="flex w-full h-full gap-6 p-6">
       {/* Sidebar */}
       <div className="hidden w-80 flex-col gap-6 lg:flex">
         <Card>
@@ -181,8 +179,8 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex flex-1 flex-col">
-        <Card className="flex flex-1 flex-col">
+      <div className="flex flex-1 flex-col h-full">
+        <Card className="flex flex-1 flex-col h-full">
           <CardHeader className="border-b">
             <div className="flex items-center justify-between">
               <div>
@@ -198,7 +196,7 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
           </CardHeader>
 
           {/* Messages */}
-          <CardContent className="flex-1 overflow-y-auto p-6">
+          <CardContent className="flex-1 overflow-y-auto p-6 max-h-[600px]">
             {conversation.length === 0 ? (
               <div className="flex h-full flex-col items-center justify-center text-center">
                 <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
@@ -319,7 +317,7 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
             <form onSubmit={handleFormSubmit} className="flex gap-2">
               <Input
                 value={input}
-                onChange={handleInputChange}
+                onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask a medical question..."
                 disabled={isLoading}
                 className="flex-1"

@@ -1,5 +1,6 @@
-import { streamText } from "ai"
+import { generateText, stepCountIs } from "ai"
 import { createClient } from "@/lib/supabase/server"
+import { medicalWebSearch } from "@/lib/web-search-tool"
 
 export const maxDuration = 30
 
@@ -123,20 +124,65 @@ Format responses clearly with:
 - Warning signs to watch for
 - When to seek additional help`
 
-    const result = streamText({
-      model: "xai/grok-4-fast-reasoning",
-      messages: [
-        {
-          role: "system",
-          content: contextPrompt,
-        },
-        ...messages,
-      ],
-      temperature: 0.7,
-      maxTokens: 2000,
-    })
+          // Convert messages to a single prompt for generateText
+          const conversationHistory = messages.map((msg: any) => `${msg.role}: ${msg.content}`).join('\n\n')
+    const fullPrompt = `${contextPrompt}
 
-    return result.toTextStreamResponse()
+Conversation History:
+${conversationHistory}`
+
+    console.log("About to call AI model with full prompt:", fullPrompt)
+    
+          const { text } = await generateText({
+            model: "xai/grok-4-fast-reasoning",
+            prompt: `${fullPrompt}
+
+Note: If the user asks about recent medical guidelines, protocols, or current medical information, use the web search tool to find the most up-to-date information from trusted medical sources.`,
+            tools: {
+              medicalWebSearch,
+            },
+            stopWhen: stepCountIs(3), // Allow up to 3 reasoning steps
+            temperature: 0.7,
+          })
+
+    console.log("AI generated response:", text)
+
+    // Save assistant message to database
+    try {
+      const { data: session } = await supabase
+        .from("chat_sessions")
+        .select("id")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single()
+
+      let sessionId = session?.id
+      if (!sessionId) {
+        const { data: newSession } = await supabase
+          .from("chat_sessions")
+          .insert({
+            user_id: userId,
+            title: "General Chat",
+          })
+          .select("id")
+          .single()
+        sessionId = newSession?.id
+      }
+
+      if (sessionId) {
+        await supabase.from("chat_messages").insert({
+          session_id: sessionId,
+          role: "assistant",
+          content: text,
+        })
+        console.log("Successfully saved assistant message to database")
+      }
+    } catch (error) {
+      console.error("Error saving assistant message to database:", error)
+    }
+
+    return Response.json({ message: text })
   } catch (error) {
     console.error("[v0] Chat API error:", error)
     return new Response("Internal Server Error", { status: 500 })

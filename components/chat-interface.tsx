@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { useChat } from "ai/react"
+import { useChat } from "@ai-sdk/react"
 import { createClient } from "@/lib/supabase/client"
 
 interface ChatInterfaceProps {

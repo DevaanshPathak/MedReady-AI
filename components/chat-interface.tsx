@@ -30,17 +30,22 @@ interface ChatInterfaceProps {
     content: string
     created_at: string
   }>
+  initialSessions: Array<{
+    id: string
+    title: string
+    created_at: string
+    updated_at: string
+    chat_messages: Array<{
+      id: string
+      role: string
+      content: string
+      created_at: string
+    }>
+  }>
+  currentSessionId?: string
 }
 
-const quickPrompts = [
-  "What are the signs of septic shock?",
-  "How do I manage postpartum hemorrhage?",
-  "Explain malaria treatment protocol",
-  "What are contraindications for aspirin?",
-  "Emergency management of snake bite",
-]
-
-export function ChatInterface({ userId, profile, initialMessages }: ChatInterfaceProps) {
+export function ChatInterface({ userId, profile, initialMessages, initialSessions, currentSessionId }: ChatInterfaceProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("general")
   const [conversation, setConversation] = useState<Array<{
     id: string
@@ -60,6 +65,8 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
     citations: [],
     toolCalls: 0
   })))
+  const [sessions, setSessions] = useState(initialSessions)
+  const [currentSession, setCurrentSession] = useState(currentSessionId)
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [copiedCode, setCopiedCode] = useState<string | null>(null)
@@ -83,16 +90,98 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
     scrollToBottom()
   }, [conversation])
 
+  // Session management functions
+  const createNewSession = async () => {
+    try {
+      const { data: newSession, error } = await supabase
+        .from("chat_sessions")
+        .insert({
+          user_id: userId,
+          title: "New Chat",
+        })
+        .select()
+        .single()
 
-  const handleQuickPrompt = async (prompt: string) => {
-    setInput(prompt)
-    await sendMessage(prompt)
+      if (error) throw error
+
+      setSessions(prev => [newSession, ...prev])
+      setCurrentSession(newSession.id)
+      setConversation([])
+    } catch (error) {
+      console.error("Error creating new session:", error)
+    }
+  }
+
+  const loadSession = async (sessionId: string) => {
+    try {
+      const { data: messages, error } = await supabase
+        .from("chat_messages")
+        .select("*")
+        .eq("session_id", sessionId)
+        .order("created_at", { ascending: true })
+
+      if (error) throw error
+
+      setCurrentSession(sessionId)
+      setConversation(messages.map(msg => ({
+        ...msg,
+        role: msg.role as "user" | "assistant",
+        citations: [],
+        toolCalls: 0
+      })))
+    } catch (error) {
+      console.error("Error loading session:", error)
+    }
+  }
+
+  const deleteSession = async (sessionId: string) => {
+    try {
+      const { error } = await supabase
+        .from("chat_sessions")
+        .delete()
+        .eq("id", sessionId)
+
+      if (error) throw error
+
+      setSessions(prev => prev.filter(s => s.id !== sessionId))
+      
+      // If we deleted the current session, create a new one
+      if (currentSession === sessionId) {
+        await createNewSession()
+      }
+    } catch (error) {
+      console.error("Error deleting session:", error)
+    }
+  }
+
+  const updateSessionTitle = async (sessionId: string, newTitle: string) => {
+    try {
+      const { error } = await supabase
+        .from("chat_sessions")
+        .update({ title: newTitle })
+        .eq("id", sessionId)
+
+      if (error) throw error
+
+      setSessions(prev => prev.map(s => 
+        s.id === sessionId ? { ...s, title: newTitle } : s
+      ))
+    } catch (error) {
+      console.error("Error updating session title:", error)
+    }
   }
 
   const sendMessage = async (message: string) => {
     if (!message.trim() || isLoading) return
 
     setIsLoading(true)
+
+    // Ensure we have a current session
+    let sessionId = currentSession
+    if (!sessionId) {
+      await createNewSession()
+      sessionId = currentSession
+    }
 
     // Add user message to conversation immediately
     const userMessage = {
@@ -103,17 +192,46 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
     }
     setConversation(prev => [...prev, userMessage])
 
+    // Save user message to database
     try {
-      const response = await fetch("/api/completion", {
+      await supabase.from("chat_messages").insert({
+        session_id: sessionId,
+        role: "user",
+        content: message,
+      })
+    } catch (error) {
+      console.error("Error saving user message:", error)
+    }
+
+    try {
+      const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          prompt: message,
+          messages: [
+            ...conversation.map(msg => ({
+              role: msg.role,
+              content: msg.content
+            })),
+            {
+              role: "user",
+              content: message,
+              data: {
+                userId,
+                userRole: profile?.role,
+                specialization: profile?.specialization,
+                location: profile?.location,
+                category: selectedCategory,
+                sessionId
+              }
+            }
+          ],
           userId,
           userRole: profile?.role,
           specialization: profile?.specialization,
           location: profile?.location,
           category: selectedCategory,
+          sessionId
         }),
       })
 
@@ -124,12 +242,46 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
         const aiMessage = {
           id: `assistant-${Date.now()}`,
           role: "assistant" as const,
-          content: data.completion,
+          content: data.message,
           citations: data.citations || [],
           toolCalls: data.toolCalls || 0,
           created_at: new Date().toISOString(),
         }
         setConversation(prev => [...prev, aiMessage])
+
+        // Update session timestamp and title if it's the first message
+        const currentSessionData = sessions.find(s => s.id === sessionId)
+        const shouldUpdateTitle = currentSessionData?.title === "New Chat" && conversation.length === 0
+        
+        if (shouldUpdateTitle) {
+          const title = message.length > 50 ? message.substring(0, 50) + "..." : message
+          await supabase
+            .from("chat_sessions")
+            .update({ 
+              updated_at: new Date().toISOString(),
+              title: title
+            })
+            .eq("id", sessionId)
+          
+          // Update sessions list
+          setSessions(prev => prev.map(s => 
+            s.id === sessionId 
+              ? { ...s, updated_at: new Date().toISOString(), title: title }
+              : s
+          ))
+        } else {
+          await supabase
+            .from("chat_sessions")
+            .update({ updated_at: new Date().toISOString() })
+            .eq("id", sessionId)
+
+          // Update sessions list to reflect the change
+          setSessions(prev => prev.map(s => 
+            s.id === sessionId 
+              ? { ...s, updated_at: new Date().toISOString() }
+              : s
+          ))
+        }
       } else {
         console.error("Failed to get AI response:", response.statusText)
       }
@@ -242,20 +394,72 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Quick Prompts</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-base">Chat History</CardTitle>
+            <Button
+              onClick={createNewSession}
+              size="sm"
+              variant="outline"
+              className="h-7 px-2 text-xs"
+            >
+              <svg className="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              New Chat
+            </Button>
           </CardHeader>
           <CardContent className="space-y-2">
-            {quickPrompts.map((prompt, index) => (
-              <button
-                key={index}
-                onClick={() => handleQuickPrompt(prompt)}
-                className="w-full rounded-lg border p-2 text-left text-sm hover:bg-accent hover:text-accent-foreground"
-                disabled={isLoading}
-              >
-                {prompt}
-              </button>
-            ))}
+            {sessions.length === 0 ? (
+              <div className="text-center py-4 text-sm text-muted-foreground">
+                No chat history yet
+              </div>
+            ) : (
+              <div className="space-y-1 max-h-96 overflow-y-auto">
+                {sessions.map((session) => (
+                  <div
+                    key={session.id}
+                    className={`group relative rounded-lg border p-3 transition-all duration-200 ${
+                      currentSession === session.id
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "border-border hover:bg-accent hover:text-accent-foreground"
+                    }`}
+                  >
+                    <button
+                      onClick={() => loadSession(session.id)}
+                      className="w-full text-left"
+                    >
+                      <div className="font-medium text-sm truncate mb-1">
+                        {session.title}
+                      </div>
+                      <div className={`text-xs ${
+                        currentSession === session.id
+                          ? "text-primary-foreground/70"
+                          : "text-muted-foreground"
+                      }`}>
+                        {new Date(session.updated_at).toLocaleDateString()}
+                      </div>
+                    </button>
+                    
+                    {/* Delete button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        deleteSession(session.id)
+                      }}
+                      className={`absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded ${
+                        currentSession === session.id
+                          ? "hover:bg-primary-foreground/20"
+                          : "hover:bg-destructive hover:text-destructive-foreground"
+                      }`}
+                    >
+                      <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -269,7 +473,9 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
               <div className="flex items-center gap-3">
                 <MedReadyLogo size="sm" showText={false} />
                 <div>
-                  <CardTitle>MedReady AI Assistant</CardTitle>
+                  <CardTitle>
+                    {sessions.find(s => s.id === currentSession)?.title || "MedReady AI Assistant"}
+                  </CardTitle>
                   <p className="mt-1 text-sm text-muted-foreground">
                     Ask medical questions, check protocols, or search drug interactions
                   </p>
@@ -296,18 +502,14 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
                   interactions, and more.
                 </p>
                 <div className="flex flex-wrap justify-center gap-2">
-                  {quickPrompts.slice(0, 3).map((prompt, index) => (
-                    <Button
-                      key={index}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleQuickPrompt(prompt)}
-                      disabled={isLoading}
-                      className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-green-50 dark:hover:from-blue-950/20 dark:hover:to-green-950/20"
-                    >
-                      {prompt}
-                    </Button>
-                  ))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={createNewSession}
+                    className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-green-50 dark:hover:from-blue-950/20 dark:hover:to-green-950/20"
+                  >
+                    Start New Chat
+                  </Button>
                 </div>
               </div>
             ) : (
@@ -398,68 +600,95 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
                             
                       {/* Display citations if available */}
                       {message.citations && message.citations.length > 0 && (
-                        <div className={`mt-4 pt-3 border-t ${
+                        <div className={`mt-4 pt-4 border-t ${
                           message.role === "user" 
-                            ? "border-blue-300/30" 
-                            : "border-border"
+                            ? "border-blue-300/20" 
+                            : "border-border/50"
                         }`}>
-                          <div className={`text-xs font-semibold mb-3 flex items-center gap-1 ${
+                          <div className={`text-xs font-medium mb-3 flex items-center gap-2 ${
                             message.role === "user" 
-                              ? "text-blue-200" 
+                              ? "text-blue-200/90" 
                               : "text-muted-foreground"
                           }`}>
-                            📚 Sources ({message.citations.length}):
+                            <div className={`p-1 rounded ${
+                              message.role === "user" 
+                                ? "bg-blue-500/20" 
+                                : "bg-muted"
+                            }`}>
+                              <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            </div>
+                            Verified Sources ({message.citations.length})
                           </div>
-                          <div className="flex flex-wrap gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             {message.citations.map((citation, index) => (
                               <a 
                                 key={index}
                                 href={citation.url} 
                                 target="_blank" 
                                 rel="noopener noreferrer"
-                                className={`group inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs transition-all duration-200 hover:scale-105 hover:shadow-sm ${
+                                className={`group relative overflow-hidden rounded-xl border transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 ${
                                   message.role === "user" 
-                                    ? "border-blue-300/40 bg-blue-500/10 text-blue-200 hover:bg-blue-500/20 hover:border-blue-300/60" 
-                                    : "border-border bg-muted/50 text-foreground hover:bg-muted hover:border-border/80"
+                                    ? "border-blue-300/30 bg-gradient-to-br from-blue-500/5 to-blue-600/10 hover:from-blue-500/10 hover:to-blue-600/20 hover:border-blue-300/50" 
+                                    : "border-border/60 bg-gradient-to-br from-muted/30 to-muted/50 hover:from-muted/50 hover:to-muted/70 hover:border-border/80"
                                 }`}
-                                title={citation.title}
                               >
-                                <div className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
-                                  message.role === "user" 
-                                    ? "bg-blue-400/20 text-blue-200" 
-                                    : "bg-primary/10 text-primary"
-                                }`}>
-                                  {index + 1}
-                                </div>
-                                <div className="flex flex-col">
-                                  <span className="font-medium truncate max-w-[200px]">
-                                    {citation.title.length > 30 
-                                      ? citation.title.substring(0, 30) + "..." 
-                                      : citation.title
-                                    }
-                                  </span>
-                                  {citation.publishedDate && (
-                                    <span className={`text-[10px] ${
+                                <div className="p-3">
+                                  <div className="flex items-start gap-3">
+                                    <div className={`flex-shrink-0 w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold ${
                                       message.role === "user" 
-                                        ? "text-blue-300/70" 
-                                        : "text-muted-foreground"
+                                        ? "bg-blue-500/20 text-blue-200" 
+                                        : "bg-primary/10 text-primary"
                                     }`}>
-                                      {new Date(citation.publishedDate).toLocaleDateString()}
-                                    </span>
-                                  )}
+                                      {index + 1}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className={`font-medium text-sm leading-tight mb-1 line-clamp-2 ${
+                                        message.role === "user" 
+                                          ? "text-blue-100" 
+                                          : "text-foreground"
+                                      }`}>
+                                        {citation.title}
+                                      </div>
+                                      <div className="flex items-center gap-2 text-xs">
+                                        {citation.domain && (
+                                          <span className={`px-2 py-0.5 rounded-full font-medium ${
+                                            message.role === "user" 
+                                              ? "bg-blue-500/20 text-blue-300" 
+                                              : "bg-muted text-muted-foreground"
+                                          }`}>
+                                            {citation.domain}
+                                          </span>
+                                        )}
+                                        {citation.publishedDate && (
+                                          <span className={`${
+                                            message.role === "user" 
+                                              ? "text-blue-300/70" 
+                                              : "text-muted-foreground"
+                                          }`}>
+                                            {new Date(citation.publishedDate).toLocaleDateString()}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className={`flex-shrink-0 p-1 rounded-lg transition-all duration-200 ${
+                                      message.role === "user" 
+                                        ? "text-blue-300/60 group-hover:text-blue-200 group-hover:bg-blue-500/20" 
+                                        : "text-muted-foreground group-hover:text-foreground group-hover:bg-muted"
+                                    }`}>
+                                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                      </svg>
+                                    </div>
+                                  </div>
                                 </div>
-                                <svg 
-                                  className={`h-3 w-3 opacity-60 group-hover:opacity-100 transition-opacity ${
-                                    message.role === "user" 
-                                      ? "text-blue-200" 
-                                      : "text-muted-foreground"
-                                  }`} 
-                                  fill="none" 
-                                  stroke="currentColor" 
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                </svg>
+                                {/* Subtle gradient overlay for depth */}
+                                <div className={`absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${
+                                  message.role === "user" 
+                                    ? "bg-gradient-to-r from-transparent via-blue-500/5 to-transparent" 
+                                    : "bg-gradient-to-r from-transparent via-primary/5 to-transparent"
+                                }`} />
                               </a>
                             ))}
                           </div>

@@ -144,18 +144,19 @@ You must ALWAYS:
 1. **Use the web search tool first** to get the most current information
 2. **Structure your response** with clear markdown headings (## and ###)
 3. **Use bullet points** (•) and numbered lists (1., 2., 3.) appropriately
-4. **Include proper citations** with links to sources found in web search
-5. **Focus on practical, actionable advice** for rural healthcare settings
-6. **Consider resource limitations** and local availability
-7. **Include safety warnings** when relevant using *italics*
-8. **Provide clear referral criteria** when appropriate
+4. **Focus on practical, actionable advice** for rural healthcare settings
+5. **Consider resource limitations** and local availability
+6. **Include safety warnings** when relevant using *italics*
+7. **Provide clear referral criteria** when appropriate
+8. **Do NOT include raw URLs or citations in your response text** - the system will automatically display citations from your web search results
 
 ## FORMATTING REQUIREMENTS
 - Start with a brief overview
 - Use **bold** for critical information
 - Use *italics* for warnings and important notes
 - End with key takeaway points
-- Always include source citations from web search results`
+- Write naturally without mentioning specific sources or URLs in the text
+- The citation display is handled automatically by the system`
 
     // Save user message to database first
     try {
@@ -210,6 +211,8 @@ CRITICAL INSTRUCTIONS:
 4. Include specific information from the search results
 5. Do NOT just list the search results - synthesize them into a coherent answer
 6. Focus on answering the user's specific question with practical guidance
+7. Do NOT include URLs, citations, or source references in your response text
+8. Write naturally and let the system handle citation display automatically
 
 Please search for current information and provide a detailed, structured response.`,
             tools: {

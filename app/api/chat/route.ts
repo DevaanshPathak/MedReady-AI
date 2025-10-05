@@ -236,25 +236,30 @@ IMPORTANT: Always use the web search tool to find the most up-to-date informatio
 
     // Save assistant message to database
     try {
-      const { data: session } = await supabase
-        .from("chat_sessions")
-        .select("id")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .single()
-
-      let sessionId = session?.id
+      let sessionId = body.sessionId
+      
+      // If no sessionId provided, get or create the most recent session
       if (!sessionId) {
-        const { data: newSession } = await supabase
+        const { data: session } = await supabase
           .from("chat_sessions")
-          .insert({
-            user_id: userId,
-            title: "General Chat",
-          })
           .select("id")
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false })
+          .limit(1)
           .single()
-        sessionId = newSession?.id
+
+        sessionId = session?.id
+        if (!sessionId) {
+          const { data: newSession } = await supabase
+            .from("chat_sessions")
+            .insert({
+              user_id: userId,
+              title: "General Chat",
+            })
+            .select("id")
+            .single()
+          sessionId = newSession?.id
+        }
       }
 
       if (sessionId) {

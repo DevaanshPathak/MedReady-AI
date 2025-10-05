@@ -121,6 +121,9 @@ IMPORTANT: Always use the web search tool to find the most up-to-date informatio
             temperature: 0.7,
           })
 
+          console.log("Tool calls:", toolCalls)
+          console.log("Tool results:", toolResults)
+
     console.log("AI generated response:", text)
 
     // Save assistant message to database

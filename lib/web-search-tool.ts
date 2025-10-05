@@ -4,10 +4,16 @@ import { getExaClient } from './exa-client'
 
 export const medicalWebSearch = tool({
   description: 'Search the web for up-to-date medical information from trusted sources like WHO, CDC, NIH, ICMR, and medical journals',
-  parameters: z.object({
+  inputSchema: z.object({
     query: z.string().min(1).max(100).describe('The medical search query'),
   }),
-  execute: async ({ query }: { query: string }) => {
+  execute: async ({ query }) => {
+    // Validate query parameter
+    if (!query || typeof query !== 'string' || query.trim().length === 0) {
+      console.error('[v0] Invalid query parameter:', query)
+      return []
+    }
+
     const exa = getExaClient()
     
     // Target trusted medical sources for healthcare workers
@@ -28,7 +34,8 @@ export const medicalWebSearch = tool({
     ]
 
     try {
-      const { results } = await exa.searchAndContents(query, {
+      console.log('[v0] Executing medical web search with query:', query)
+      const { results } = await exa.searchAndContents(query.trim(), {
         livecrawl: 'always',
         numResults: 3,
         includeDomains: medicalDomains,
@@ -53,10 +60,16 @@ export const medicalWebSearch = tool({
 
 export const emergencyWebSearch = tool({
   description: 'Search for emergency medical protocols and latest emergency care guidelines',
-  parameters: z.object({
+  inputSchema: z.object({
     query: z.string().min(1).max(100).describe('The emergency medical search query'),
   }),
-  execute: async ({ query }: { query: string }) => {
+  execute: async ({ query }) => {
+    // Validate query parameter
+    if (!query || typeof query !== 'string' || query.trim().length === 0) {
+      console.error('[v0] Invalid emergency query parameter:', query)
+      return []
+    }
+
     const exa = getExaClient()
     
     // Focus on emergency medicine and critical care sources
@@ -74,7 +87,8 @@ export const emergencyWebSearch = tool({
     ]
 
     try {
-      const { results } = await exa.searchAndContents(query, {
+      console.log('[v0] Executing emergency web search with query:', query)
+      const { results } = await exa.searchAndContents(query.trim(), {
         livecrawl: 'always',
         numResults: 3,
         includeDomains: emergencyDomains,

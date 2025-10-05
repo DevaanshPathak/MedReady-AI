@@ -10,6 +10,10 @@ import { Badge } from "@/components/ui/badge"
 import { createClient } from "@/lib/supabase/client"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import { useTheme } from "next-themes"
+import { Copy, Check } from "lucide-react"
 
 interface ChatInterfaceProps {
   userId: string
@@ -56,8 +60,10 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
   })))
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [copiedCode, setCopiedCode] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
+  const { theme } = useTheme()
 
   // Debug logging
   console.log("Chat Interface Debug:", {

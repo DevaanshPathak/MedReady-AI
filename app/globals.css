@@ -137,12 +137,7 @@
   }
 
   .landing-hero {
-    position: relative;
-    overflow: hidden;
-    border-radius: calc(var(--radius) * 2);
-    border: 1px solid hsl(var(--border));
-    background-color: hsl(var(--card));
-    padding: clamp(3rem, 5vw, 4.5rem) clamp(1.5rem, 5vw, 4rem);
+    @apply relative overflow-hidden rounded-[calc(var(--radius)*2)] border border-border bg-card px-6 py-12 shadow-lg sm:px-12 md:py-16;
     box-shadow: 0 24px 70px -32px rgba(15, 23, 42, 0.45);
   }
 
@@ -160,7 +155,7 @@
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, hsla(var(--primary), 0.08) 0%, transparent 40%, hsla(var(--accent), 0.12) 100%);
+    background: linear-gradient(135deg, hsla(var(--primary) / 0.08) 0%, transparent 40%, hsla(var(--accent) / 0.12) 100%);
     mix-blend-mode: screen;
     pointer-events: none;
   }
@@ -190,12 +185,7 @@
   }
 
   .landing-step {
-    position: relative;
-    overflow: hidden;
-    border-radius: calc(var(--radius) * 2);
-    border: 1px solid hsl(var(--border));
-    background-color: hsl(var(--card));
-    padding: clamp(2.5rem, 4vw, 3.5rem);
+    @apply relative overflow-hidden rounded-[calc(var(--radius)*2)] border border-border bg-card p-10 shadow-lg;
     box-shadow: 0 12px 45px -30px rgba(15, 23, 42, 0.35);
   }
 
@@ -211,7 +201,7 @@
     justify-content: center;
     border-radius: 9999px;
     background-color: hsl(var(--primary));
-    color: hsl(var(--primary-foreground));
+    color: rgb(var(--primary-foreground));
     font-size: 1.125rem;
     font-weight: 600;
     box-shadow: 0 15px 35px -20px rgba(0, 102, 204, 0.75);

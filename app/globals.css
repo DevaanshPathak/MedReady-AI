@@ -127,6 +127,95 @@
   }
 }
 
+@layer components {
+  .landing-section {
+    @apply container mx-auto px-4;
+  }
+
+  .landing-section-muted {
+    @apply border-t border-border bg-muted/50;
+  }
+
+  .landing-hero {
+    @apply relative overflow-hidden rounded-[calc(var(--radius)*2)] border border-border bg-card px-6 py-12 shadow-lg sm:px-12 md:py-16;
+    box-shadow: 0 24px 70px -32px rgba(15, 23, 42, 0.45);
+  }
+
+  .landing-hero::before {
+    content: "";
+    position: absolute;
+    inset: -45% -30% 25% -35%;
+    background: radial-gradient(circle at top left, hsl(var(--primary)) 0%, transparent 55%),
+      radial-gradient(circle at bottom right, hsl(var(--secondary)) 0%, transparent 65%);
+    opacity: 0.24;
+    filter: blur(8px);
+  }
+
+  .landing-hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.08) 0%, transparent 40%, hsl(var(--accent) / 0.12) 100%);
+    mix-blend-mode: screen;
+    pointer-events: none;
+  }
+
+  .landing-hero > * {
+    position: relative;
+  }
+
+  .landing-metric {
+    @apply rounded-xl border border-border/70 bg-background/75 p-6 shadow-sm backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg;
+  }
+
+  .landing-metric strong {
+    @apply text-3xl font-semibold text-foreground sm:text-4xl;
+  }
+
+  .landing-feature-icon {
+    @apply mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary;
+  }
+
+  .landing-testimonial {
+    @apply flex h-full flex-col justify-between rounded-2xl border border-border bg-card p-8 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg;
+  }
+
+  .landing-testimonial cite {
+    @apply mt-6 block text-sm font-medium text-muted-foreground;
+  }
+
+  .landing-step {
+    @apply relative overflow-hidden rounded-[calc(var(--radius)*2)] border border-border bg-card p-10 shadow-lg;
+    box-shadow: 0 12px 45px -30px rgba(15, 23, 42, 0.35);
+  }
+
+  .landing-step::before {
+    content: attr(data-step);
+    position: absolute;
+    top: 2rem;
+    left: -1.75rem;
+    display: flex;
+    height: 3.5rem;
+    width: 3.5rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    background-color: hsl(var(--primary));
+    color: rgb(var(--primary-foreground));
+    font-size: 1.125rem;
+    font-weight: 600;
+    box-shadow: 0 15px 35px -20px rgba(0, 102, 204, 0.75);
+  }
+
+  .landing-partners {
+    @apply flex flex-wrap items-center justify-center gap-x-12 gap-y-4 text-sm font-medium text-muted-foreground;
+  }
+
+  .landing-hero-panel {
+    @apply flex h-full flex-col justify-between gap-8 rounded-[calc(var(--radius)*1.5)] border border-border bg-background/80 p-8 shadow-lg backdrop-blur;
+  }
+}
+
 @layer utilities {
   .reveal-element {
     --reveal-x: 0px;

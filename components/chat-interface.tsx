@@ -14,6 +14,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { useTheme } from "next-themes"
 import { Copy, Check } from "lucide-react"
+import { MedReadyLogo } from "@/components/medready-logo"
 
 interface ChatInterfaceProps {
   userId: string
@@ -147,6 +148,66 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
     setInput("") // Clear input after sending
   }
 
+  // Custom components for enhanced markdown rendering
+  const copyToClipboard = async (text: string, id: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedCode(id)
+      setTimeout(() => setCopiedCode(null), 2000)
+    } catch (err) {
+      console.error('Failed to copy text: ', err)
+    }
+  }
+
+  const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
+    const match = /language-(\w+)/.exec(className || '')
+    const language = match ? match[1] : ''
+    const codeId = `code-${Date.now()}-${Math.random()}`
+    
+    if (!inline && language) {
+      return (
+        <div className="relative my-4 overflow-hidden rounded-lg border bg-muted/50">
+          <div className="flex items-center justify-between border-b bg-muted px-4 py-2 text-sm">
+            <span className="font-medium text-muted-foreground">{language}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => copyToClipboard(String(children).replace(/\n$/, ''), codeId)}
+              className="h-6 w-6 p-0"
+            >
+              {copiedCode === codeId ? (
+                <Check className="h-3 w-3" />
+              ) : (
+                <Copy className="h-3 w-3" />
+              )}
+            </Button>
+          </div>
+          <SyntaxHighlighter
+            style={theme === 'dark' ? oneDark : oneLight}
+            language={language}
+            PreTag="div"
+            className="!m-0 !rounded-none"
+            customStyle={{
+              margin: 0,
+              background: 'transparent',
+              padding: '1rem',
+              fontSize: '0.875rem',
+            }}
+            {...props}
+          >
+            {String(children).replace(/\n$/, '')}
+          </SyntaxHighlighter>
+        </div>
+      )
+    }
+    
+    return (
+      <code className="rounded bg-muted px-1.5 py-0.5 text-sm font-mono" {...props}>
+        {children}
+      </code>
+    )
+  }
+
   return (
     <div className="flex w-full h-full gap-6 p-6">
       {/* Sidebar */}
@@ -204,11 +265,14 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
         <Card className="flex flex-1 flex-col h-full">
           <CardHeader className="border-b">
             <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>MedReady AI Assistant</CardTitle>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Ask medical questions, check protocols, or search drug interactions
-                </p>
+              <div className="flex items-center gap-3">
+                <MedReadyLogo size="sm" showText={false} />
+                <div>
+                  <CardTitle>MedReady AI Assistant</CardTitle>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Ask medical questions, check protocols, or search drug interactions
+                  </p>
+                </div>
               </div>
               <Badge variant="outline" className="bg-accent/10">
                 {selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}
@@ -264,7 +328,7 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
                     className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
                   >
                     {message.role === "assistant" && (
-                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary">
+                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-green-500">
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           viewBox="0 0 24 24"
@@ -273,24 +337,85 @@ export function ChatInterface({ userId, profile, initialMessages }: ChatInterfac
                           strokeWidth="2"
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          className="h-4 w-4 text-primary-foreground"
+                          className="h-4 w-4 text-white"
                         >
                           <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
                         </svg>
                       </div>
                     )}
                     <div
-                      className={`max-w-[80%] rounded-lg px-4 py-3 ${
-                        message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+                      className={`max-w-[80%] rounded-lg px-4 py-3 shadow-sm ${
+                        message.role === "user" 
+                          ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white" 
+                          : "bg-card border border-border/50 text-foreground"
                       }`}
                     >
-                            <div className="text-sm leading-relaxed prose prose-sm max-w-none prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-em:text-foreground prose-ul:text-foreground prose-ol:text-foreground prose-li:text-foreground prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline">
-                              <ReactMarkdown 
-                                remarkPlugins={[remarkGfm]}
-                              >
-                                {message.content}
-                              </ReactMarkdown>
-                            </div>
+                      <div className={`text-sm leading-relaxed ${
+                        message.role === "user" 
+                          ? "prose prose-sm max-w-none prose-headings:text-white prose-p:text-white prose-strong:text-white prose-em:text-white prose-ul:text-white prose-ol:text-white prose-li:text-white prose-a:text-blue-200 prose-a:no-underline hover:prose-a:underline"
+                          : "prose prose-sm max-w-none prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-em:text-foreground prose-ul:text-foreground prose-ol:text-foreground prose-li:text-foreground prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-code:bg-muted/50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-muted/50 prose-pre:border prose-pre:border-border/50"
+                      }`}>
+                        <ReactMarkdown 
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            code: CodeBlock,
+                            pre: ({ children, ...props }) => (
+                              <pre className="overflow-x-auto" {...props}>
+                                {children}
+                              </pre>
+                            ),
+                            blockquote: ({ children, ...props }) => (
+                              <blockquote className="border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-950/20 pl-4 py-2 my-2 rounded-r" {...props}>
+                                {children}
+                              </blockquote>
+                            ),
+                            table: ({ children, ...props }) => (
+                              <div className="overflow-x-auto my-4">
+                                <table className="min-w-full border border-border rounded-lg" {...props}>
+                                  {children}
+                                </table>
+                              </div>
+                            ),
+                            th: ({ children, ...props }) => (
+                              <th className="border border-border bg-muted px-4 py-2 text-left font-semibold" {...props}>
+                                {children}
+                              </th>
+                            ),
+                            td: ({ children, ...props }) => (
+                              <td className="border border-border px-4 py-2" {...props}>
+                                {children}
+                              </td>
+                            ),
+                            ul: ({ children, ...props }) => (
+                              <ul className="list-disc list-inside space-y-1 my-2" {...props}>
+                                {children}
+                              </ul>
+                            ),
+                            ol: ({ children, ...props }) => (
+                              <ol className="list-decimal list-inside space-y-1 my-2" {...props}>
+                                {children}
+                              </ol>
+                            ),
+                            h1: ({ children, ...props }) => (
+                              <h1 className="text-xl font-bold mt-4 mb-2 border-b border-border pb-2" {...props}>
+                                {children}
+                              </h1>
+                            ),
+                            h2: ({ children, ...props }) => (
+                              <h2 className="text-lg font-semibold mt-3 mb-2" {...props}>
+                                {children}
+                              </h2>
+                            ),
+                            h3: ({ children, ...props }) => (
+                              <h3 className="text-base font-semibold mt-2 mb-1" {...props}>
+                                {children}
+                              </h3>
+                            ),
+                          }}
+                        >
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
                             
                             {/* Display citations if available */}
                             {message.citations && message.citations.length > 0 && (

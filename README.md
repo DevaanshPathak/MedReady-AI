@@ -207,7 +207,7 @@ This project is licensed under the MIT License.
 ## 🙏 Acknowledgments
 
 - [Next.js](https://nextjs.org/) for the amazing React framework
-- [Supabase](https://supabase.com/) for backend infrastructure
+- [Clerk](https://clerk.com/) for authentication and user management
 - [OpenAI](https://openai.com/) for AI capabilities
 - [Tailwind CSS](https://tailwindcss.com/) for styling
 - [Lucide](https://lucide.dev/) for beautiful icons

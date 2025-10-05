@@ -123,7 +123,8 @@ src/
 │   ├── auth/        # Authentication pages
 │   └── ...
 ├── components/       # Reusable components
-├── lib/             # Library code (Supabase, OpenAI)
+├── lib/             # Library code (OpenAI, utilities)
+├── middleware.ts    # Clerk authentication middleware
 ├── types/           # TypeScript types
 └── utils/           # Utility functions
 ```
@@ -279,7 +280,7 @@ When suggesting features:
 ### Documentation
 
 - [Next.js Documentation](https://nextjs.org/docs)
-- [Supabase Documentation](https://supabase.com/docs)
+- [Clerk Documentation](https://clerk.com/docs)
 - [OpenAI API Documentation](https://platform.openai.com/docs)
 - [Tailwind CSS Documentation](https://tailwindcss.com/docs)
 

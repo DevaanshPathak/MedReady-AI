@@ -247,11 +247,11 @@ OPENAI_API_KEY=your_openai_api_key
 
 ### What This Project Demonstrates
 
-1. **Full-Stack Development**: Complete app from frontend to database
+1. **Full-Stack Development**: Complete app with authentication and AI
 2. **AI Integration**: Real-world OpenAI API usage
 3. **Modern React**: Next.js 14 App Router patterns
 4. **TypeScript**: Type-safe development
-5. **Database Design**: Supabase with RLS policies
+5. **Authentication**: Secure user management with Clerk
 6. **UI/UX**: Professional, responsive design
 7. **DevOps**: Production-ready deployment
 
@@ -260,13 +260,13 @@ OPENAI_API_KEY=your_openai_api_key
 ### Free Tier Capacity
 
 - **Vercel**: 100GB bandwidth (sufficient for thousands of users)
-- **Supabase**: 500MB database, 2GB bandwidth (good for MVP)
+- **Clerk**: 10,000 monthly active users (excellent for growth)
 - **OpenAI**: Pay-per-use (~$0.001-0.002 per question)
 
 ### Estimated Monthly Costs (1000 Active Users)
 
 - Vercel: $0 (within free tier)
-- Supabase: $0 (within free tier)
+- Clerk: $0 (within free tier)
 - OpenAI: $10-30 (depends on usage)
 
 **Total**: $10-30/month for 1000 active users
@@ -289,10 +289,10 @@ OPENAI_API_KEY=your_openai_api_key
 MedReady AI is a **complete, production-ready application** that demonstrates modern web development best practices. It successfully combines:
 
 - ✅ AI/ML integration (OpenAI)
-- ✅ Real-time data (Supabase)
 - ✅ Modern frontend (Next.js + TypeScript)
 - ✅ Responsive design (Tailwind CSS)
-- ✅ Secure authentication (Supabase Auth)
+- ✅ Secure authentication (Clerk)
+- ✅ Protected routes with middleware
 - ✅ Professional UI/UX
 
 The application is ready to help medical students prepare for their exams with personalized, AI-powered learning!

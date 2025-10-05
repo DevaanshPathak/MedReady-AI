@@ -125,7 +125,7 @@ export default function Home() {
 
         {/* Footer */}
         <footer className="text-center text-gray-600">
-          <p>© 2024 MedReady AI. Built with Next.js, Supabase, and OpenAI.</p>
+          <p>© 2024 MedReady AI. Built with Next.js, Clerk, and OpenAI.</p>
         </footer>
       </div>
     </main>

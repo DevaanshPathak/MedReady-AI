@@ -203,7 +203,15 @@ You must ALWAYS:
 
 User Question: ${prompt}
 
-Please search for current medical information and provide a detailed response based on the search results.`,
+CRITICAL INSTRUCTIONS:
+1. ALWAYS use the web search tool first to find current medical information
+2. After getting search results, provide a comprehensive, well-structured response
+3. Use proper markdown formatting with ## headings and bullet points
+4. Include specific information from the search results
+5. Do NOT just list the search results - synthesize them into a coherent answer
+6. Focus on answering the user's specific question with practical guidance
+
+Please search for current information and provide a detailed, structured response.`,
             tools: {
               medicalWebSearch,
             },
@@ -271,9 +279,12 @@ Please search for current medical information and provide a detailed response ba
             // Generate response from search results if AI didn't respond
             const searchResults = toolResults[0]?.output || []
             if (Array.isArray(searchResults) && searchResults.length > 0) {
-              responseText = `## Overview\nBased on the latest medical information from trusted sources, here's what you should know:\n\n## Key Information\n${searchResults.map((result: any, index: number) => 
-  `### ${index + 1}. ${result.title || 'Medical Information'}\n${result.content ? result.content.substring(0, 500) + '...' : 'Information available at source.'}`
-).join('\n\n')}\n\n## Sources Consulted\n${searchResults.map((result: any, index: number) => 
+              responseText = `## Overview\nBased on the latest medical information from trusted sources, here's what you should know about your question:\n\n## Key Information\n${searchResults.map((result: any, index: number) => {
+    const cleanContent = result.content ? 
+      result.content.replace(/\s+/g, ' ').trim().substring(0, 800) : 
+      'Information available at source.'
+    return `### ${index + 1}. ${result.title || 'Medical Information'}\n\n${cleanContent}${cleanContent.length >= 800 ? '...' : ''}`
+  }).join('\n\n')}\n\n## Sources Consulted\n${searchResults.map((result: any, index: number) => 
   `${index + 1}. [${result.title || 'Source'}](${result.url})`
 ).join('\n')}\n\n## Important Note\n*This information is for educational purposes. Always consult with a healthcare professional for medical advice.*`
             }

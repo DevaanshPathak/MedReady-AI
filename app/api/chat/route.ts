@@ -229,6 +229,7 @@ IMPORTANT: Always use the web search tool to find the most up-to-date informatio
               medicalWebSearch,
             },
             temperature: 0.2,
+            stopWhen: stepCountIs(5),
           })
 
     console.log("AI generated response:", text)

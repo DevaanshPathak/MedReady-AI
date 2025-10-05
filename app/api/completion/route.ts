@@ -216,6 +216,7 @@ Please search for current information and provide a detailed, structured respons
               medicalWebSearch,
             },
             temperature: 0.7,
+            stopWhen: stepCountIs(5),
           })
 
           console.log("Tool calls:", toolCalls)
@@ -272,27 +273,8 @@ Please search for current information and provide a detailed, structured respons
             return []
           }) || []
 
-          // Fallback if AI doesn't generate response
-          let responseText = text
-          
-          if (!responseText && toolResults && toolResults.length > 0) {
-            // Generate response from search results if AI didn't respond
-            const searchResults = toolResults[0]?.output || []
-            if (Array.isArray(searchResults) && searchResults.length > 0) {
-              responseText = `## Overview\nBased on the latest medical information from trusted sources, here's what you should know about your question:\n\n## Key Information\n${searchResults.map((result: any, index: number) => {
-    const cleanContent = result.content ? 
-      result.content.replace(/\s+/g, ' ').trim().substring(0, 800) : 
-      'Information available at source.'
-    return `### ${index + 1}. ${result.title || 'Medical Information'}\n\n${cleanContent}${cleanContent.length >= 800 ? '...' : ''}`
-  }).join('\n\n')}\n\n## Sources Consulted\n${searchResults.map((result: any, index: number) => 
-  `${index + 1}. [${result.title || 'Source'}](${result.url})`
-).join('\n')}\n\n## Important Note\n*This information is for educational purposes. Always consult with a healthcare professional for medical advice.*`
-            }
-          }
-          
-          if (!responseText) {
-            responseText = "I apologize, but I'm having trouble generating a response right now. Please try again or rephrase your question."
-          }
+          // Use the AI generated response (stopWhen handles the multi-step process)
+          const responseText = text || "I apologize, but I'm having trouble generating a response right now. Please try again or rephrase your question."
           
           return Response.json({ 
             completion: responseText,

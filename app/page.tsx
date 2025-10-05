@@ -1,19 +1,268 @@
 import Link from "next/link"
+import type { LucideIcon } from "lucide-react"
+import {
+  Activity,
+  ArrowRight,
+  BookOpenCheck,
+  BrainCircuit,
+  GraduationCap,
+  HeartPulse,
+  MapPinned,
+  RadioReceiver,
+  ShieldCheck,
+  Sparkles,
+  Stethoscope,
+  Users2,
+} from "lucide-react"
 
 import { Reveal } from "@/components/reveal"
-import { Button } from "@/components/ui/button"
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ThemeToggle } from "@/components/theme-toggle"
 import { MedReadyLogo } from "@/components/medready-logo"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardDescription, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { ThemeToggle } from "@/components/theme-toggle"
+import { cn } from "@/lib/utils"
+
+type Highlight = {
+  title: string
+  description: string
+  icon: LucideIcon
+}
+
+type Snapshot = {
+  title: string
+  value: string
+  trend: string
+  icon: LucideIcon
+  accent: string
+}
+
+type Metric = {
+  value: string
+  label: string
+  detail: string
+}
+
+type Feature = {
+  title: string
+  description: string
+  icon: LucideIcon
+  accentClass?: string
+}
+
+type Pillar = {
+  title: string
+  summary: string
+  bullets: string[]
+  icon: LucideIcon
+}
+
+type WorkflowStep = {
+  title: string
+  description: string
+  impact: string
+}
+
+type Testimonial = {
+  quote: string
+  name: string
+  title: string
+}
+
+const heroHighlights: Highlight[] = [
+  {
+    title: "Personalized journeys for 12+ clinical roles",
+    description: "Adaptive skill assessments calibrate curriculum for ASHAs, ANMs, nurses, and telemedicine coaches.",
+    icon: Sparkles,
+  },
+  {
+    title: "AI insights localized for every district",
+    description: "Risk scores blend public health data with on-ground feedback to prioritize interventions where they matter most.",
+    icon: MapPinned,
+  },
+  {
+    title: "Secure by design, compliant with NDHM",
+    description: "Role-based access, encrypted records, and audit-ready logs keep healthcare data protected at every step.",
+    icon: ShieldCheck,
+  },
+]
+
+const heroSnapshot: Snapshot[] = [
+  {
+    title: "Maternal health protocols refreshed",
+    value: "4 pathways",
+    trend: "Synced 12 minutes ago",
+    icon: Sparkles,
+    accent: "text-primary",
+  },
+  {
+    title: "Rural clinics on-track",
+    value: "87 sites",
+    trend: "Coverage across 18 districts",
+    icon: MapPinned,
+    accent: "text-secondary",
+  },
+  {
+    title: "Emergency drills scheduled",
+    value: "24 sessions",
+    trend: "Next 30 days",
+    icon: RadioReceiver,
+    accent: "text-accent",
+  },
+]
+
+const metrics: Metric[] = [
+  {
+    value: "18k+",
+    label: "Learning modules completed",
+    detail: "Tracked across 9 local languages",
+  },
+  {
+    value: "92%",
+    label: "Average post-assessment uplift",
+    detail: "Measured after 30 days of practice",
+  },
+  {
+    value: "120+",
+    label: "District deployments supported",
+    detail: "Partnerships with state health missions",
+  },
+]
+
+const featureHighlights: Feature[] = [
+  {
+    title: "Adaptive Learning Paths",
+    description: "AI calibrates modules to skill level, language preference, and connectivity constraints.",
+    icon: BookOpenCheck,
+    accentClass: "bg-primary/10 text-primary",
+  },
+  {
+    title: "Clinical Decision Co-pilot",
+    description: "Point-of-care prompts deliver differential diagnoses, dosage safety, and triage checklists instantly.",
+    icon: Stethoscope,
+    accentClass: "bg-secondary/10 text-secondary",
+  },
+  {
+    title: "Population Health Intelligence",
+    description: "District dashboards interpret surveillance data to flag emerging outbreaks before they escalate.",
+    icon: Activity,
+    accentClass: "bg-accent/10 text-accent",
+  },
+  {
+    title: "Emergency Response Playbooks",
+    description: "Command center templates orchestrate multi-agency drills and track readiness gaps in real time.",
+    icon: HeartPulse,
+    accentClass: "bg-primary/10 text-primary",
+  },
+  {
+    title: "Competency Certifications",
+    description: "Digital badges issued with verifiable QR codes unlock new career pathways and incentives.",
+    icon: GraduationCap,
+    accentClass: "bg-secondary/10 text-secondary",
+  },
+  {
+    title: "Workforce Collaboration",
+    description: "Communities of practice connect rural clinicians with specialists for rapid escalation and mentorship.",
+    icon: Users2,
+    accentClass: "bg-accent/10 text-accent",
+  },
+]
+
+const platformPillars: Pillar[] = [
+  {
+    title: "Learning & Knowledge",
+    summary: "Guided micro-modules keep frontline teams future-ready in under 20 minutes a day.",
+    bullets: [
+      "Role-based journeys curated with national health programs",
+      "Offline-first delivery for low bandwidth contexts",
+      "Instant translation across English, Hindi, Marathi, and Bengali",
+    ],
+    icon: BrainCircuit,
+  },
+  {
+    title: "Operations Command",
+    summary: "One command view aligns capacity, supply chains, and emergency escalation pathways.",
+    bullets: [
+      "Unified incident log for district rapid response teams",
+      "Automated SOP reminders triggered by surveillance alerts",
+      "Compliance tracking mapped to state health scorecards",
+    ],
+    icon: ShieldCheck,
+  },
+  {
+    title: "Deployment Intelligence",
+    summary: "Data-backed recommendations ensure the right clinician reaches the right community faster.",
+    bullets: [
+      "AI matching blends competencies with local burden indices",
+      "Travel-ready packs organised for remote outposts",
+      "Outcome monitoring closes the loop with community feedback",
+    ],
+    icon: MapPinned,
+  },
+]
+
+const workflowSteps: WorkflowStep[] = [
+  {
+    title: "Assess & Benchmark",
+    description: "Healthcare workers complete baseline assessments aligned to national standards and community needs.",
+    impact: "Personalized readiness plans generated instantly with measurable KPIs.",
+  },
+  {
+    title: "Upskill & Coach",
+    description: "Adaptive, mobile-first modules blend simulation, live cases, and specialist mentorship.",
+    impact: "Competency uplift tracked continuously with AI nudges and peer review.",
+  },
+  {
+    title: "Deploy & Monitor",
+    description: "Workforce rosters sync with district operations, flagging risks and celebrating milestones.",
+    impact: "Command center dashboard keeps leadership audit-ready with outcomes and impact trails.",
+  },
+]
+
+const testimonials: Testimonial[] = [
+  {
+    quote:
+      "Within eight weeks we increased skilled birth attendance coverage by 27% because every ANM knew exactly which protocol to refresh each morning.",
+    name: "Dr. Meera Kulkarni",
+    title: "Chief Medical Officer, Gadchiroli District Hospital",
+  },
+  {
+    quote:
+      "MedReady AI helped us orchestrate cross-district emergency drills without adding headcount. The command dashboard has become our single source of truth.",
+    name: "Raghav Singh",
+    title: "State Program Manager, National Health Mission Uttar Pradesh",
+  },
+]
+
+const partnerLogos: string[] = [
+  "WHO India",
+  "Maharashtra Health Mission",
+  "Indian Nursing Council",
+  "UNICEF Health Alliance",
+  "Tata Trusts Health",
+]
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Reveal as="div" variant="left">
             <MedReadyLogo size="sm" />
+          </Reveal>
+          <Reveal as="nav" variant="down" className="hidden items-center gap-6 text-sm font-medium text-muted-foreground md:flex">
+            <Link href="#features" className="transition-colors hover:text-foreground">
+              Platform
+            </Link>
+            <Link href="#pillars" className="transition-colors hover:text-foreground">
+              Solutions
+            </Link>
+            <Link href="#workflow" className="transition-colors hover:text-foreground">
+              How it works
+            </Link>
+            <Link href="#testimonials" className="transition-colors hover:text-foreground">
+              Impact
+            </Link>
           </Reveal>
           <Reveal as="div" className="flex items-center gap-2" variant="right" delay="xs">
             <ThemeToggle />
@@ -27,256 +276,259 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="container mx-auto px-4 py-16 md:py-24">
-        <div className="mx-auto max-w-3xl text-center">
-          <Reveal as="h1" className="text-balance text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl" variant="down">
-            Transform Healthcare Workforce Readiness with AI
-          </Reveal>
-          <Reveal as="p" className="mt-6 text-pretty text-lg leading-relaxed text-muted-foreground" delay="xs">
-            MedReady AI provides personalized training, real-time knowledge updates, and strategic deployment
-            recommendations for healthcare professionals across India.
-          </Reveal>
-          <Reveal as="div" className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center" delay="sm">
-            <Button asChild size="lg" className="text-base">
-              <Link href="/auth/sign-up">Start Learning</Link>
-            </Button>
-            <Button asChild size="lg" variant="outline" className="text-base bg-transparent">
-              <Link href="#features">Learn More</Link>
-            </Button>
-          </Reveal>
-        </div>
-      </section>
+      <main>
+        <section className="landing-section py-20 md:py-28">
+          <div className="landing-hero">
+            <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] lg:items-center">
+              <div className="space-y-8">
+                <Reveal as="div" variant="up" className="inline-flex">
+                  <Badge variant="outline" className="bg-background/80 text-muted-foreground">
+                    Empowering frontline healthcare in India
+                  </Badge>
+                </Reveal>
+                <Reveal as="h1" className="text-balance text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl" variant="down">
+                  Transform healthcare workforce readiness with precise AI guidance
+                </Reveal>
+                <Reveal as="p" className="text-pretty text-lg leading-relaxed text-muted-foreground" delay="xs">
+                  MedReady AI unifies adaptive training, operational command, and deployment intelligence so every community clinic delivers safe, reliable care—no matter the postcode.
+                </Reveal>
+                <Reveal as="div" className="flex flex-col gap-3 sm:flex-row sm:items-center" delay="sm">
+                  <Button asChild size="lg" className="text-base">
+                    <Link href="/auth/sign-up" className="flex items-center gap-2">
+                      Start free pilot
+                      <ArrowRight className="size-4" />
+                    </Link>
+                  </Button>
+                  <Button asChild size="lg" variant="outline" className="text-base">
+                    <Link href="#workflow">See how it works</Link>
+                  </Button>
+                </Reveal>
+                <Reveal as="ul" className="grid gap-4 sm:grid-cols-2" delay="md">
+                  {heroHighlights.map(({ title, description, icon: Icon }) => (
+                    <li key={title} className="rounded-xl border border-border bg-background/80 p-5 shadow-sm">
+                      <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                        <Icon className="size-4" />
+                      </div>
+                      <p className="font-semibold leading-snug text-foreground">{title}</p>
+                      <p className="mt-2 text-sm text-muted-foreground">{description}</p>
+                    </li>
+                  ))}
+                </Reveal>
+              </div>
 
-      {/* Features Section */}
-      <section id="features" className="border-t border-border bg-muted/50 py-16 md:py-24">
-        <div className="container mx-auto px-4">
-          <div className="mx-auto max-w-2xl text-center">
-            <Reveal as="h2" className="text-balance text-3xl font-bold tracking-tight sm:text-4xl">
-              Comprehensive Healthcare Training Platform
-            </Reveal>
-            <Reveal as="p" className="mt-4 text-pretty leading-relaxed text-muted-foreground" delay="xs">
-              Built for healthcare workers, by healthcare experts, powered by AI
-            </Reveal>
-          </div>
+              <Reveal className="landing-hero-panel" variant="left" delay="sm">
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold uppercase tracking-wider text-primary">AI command snapshot</p>
+                  <h2 className="text-2xl font-semibold tracking-tight text-foreground">Live readiness across your districts</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Daily insights highlight critical gaps, successful interventions, and opportunities for rapid reinforcement.
+                  </p>
+                </div>
+                <div className="space-y-5">
+                  {heroSnapshot.map(({ title, value, trend, icon: Icon, accent }) => (
+                    <div key={title} className="flex items-start justify-between rounded-xl border border-border/70 bg-card/80 p-4">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">{title}</p>
+                        <p className="mt-1 text-lg font-semibold text-foreground">{value}</p>
+                      </div>
+                      <div className={cn("flex items-center gap-2 text-sm font-medium", accent)}>
+                        <Icon className="size-4" />
+                        {trend}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="rounded-2xl border border-dashed border-primary/40 bg-primary/10 p-5 text-primary">
+                  <p className="text-sm font-semibold uppercase tracking-wide">Deployment insight</p>
+                  <p className="mt-2 text-sm text-primary/80">
+                    312 workers certified for advanced neonatal care are available for redeployment this month.
+                  </p>
+                </div>
+              </Reveal>
+            </div>
 
-          <div className="mx-auto mt-12 grid max-w-5xl gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            <Reveal delay="none">
-              <Card>
-                <CardHeader>
-                  <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-6 w-6 text-primary"
-                    >
-                      <path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z" />
-                      <path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
-                      <path d="M12 2v2" />
-                      <path d="M12 22v-2" />
-                      <path d="m17 20.66-1-1.73" />
-                      <path d="M11 10.27 7 3.34" />
-                      <path d="m20.66 17-1.73-1" />
-                      <path d="m3.34 7 1.73 1" />
-                      <path d="M14 12h8" />
-                      <path d="M2 12h2" />
-                      <path d="m20.66 7-1.73 1" />
-                      <path d="m3.34 17 1.73-1" />
-                      <path d="m17 3.34-1 1.73" />
-                      <path d="m11 13.73-4 6.93" />
-                    </svg>
-                  </div>
-                  <CardTitle>Adaptive Learning</CardTitle>
-                  <CardDescription>
-                    AI-powered skill assessment and personalized learning paths tailored to your role and location
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-            </Reveal>
-
-            <Reveal delay="xs">
-              <Card>
-                <CardHeader>
-                  <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-accent/10">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-6 w-6 text-accent"
-                    >
-                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                      <path d="M8 10h.01" />
-                      <path d="M12 10h.01" />
-                      <path d="M16 10h.01" />
-                    </svg>
-                  </div>
-                  <CardTitle>Real-time Knowledge Sync</CardTitle>
-                  <CardDescription>
-                    Stay updated with latest medical protocols, drug interactions, and treatment guidelines
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-            </Reveal>
-
-            <Reveal delay="sm">
-              <Card>
-                <CardHeader>
-                  <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-6 w-6 text-primary"
-                    >
-                      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-                      <circle cx="12" cy="10" r="3" />
-                    </svg>
-                  </div>
-                  <CardTitle>Rural Deployment Intelligence</CardTitle>
-                  <CardDescription>
-                    Smart matching for healthcare worker deployment based on skills and regional needs
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-            </Reveal>
-
-            <Reveal delay="md">
-              <Card>
-                <CardHeader>
-                  <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-[hsl(var(--alert-orange))]/10">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-6 w-6 text-[hsl(var(--alert-orange))]"
-                    >
-                      <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
-                      <path d="M12 8v4" />
-                      <path d="M12 16h.01" />
-                    </svg>
-                  </div>
-                  <CardTitle>Emergency Response Training</CardTitle>
-                  <CardDescription>
-                    Predictive emergency training based on regional risk factors and simulation assessments
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-            </Reveal>
-
-            <Reveal delay="lg">
-              <Card>
-                <CardHeader>
-                  <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-accent/10">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-6 w-6 text-accent"
-                    >
-                      <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
-                      <line x1="16" x2="16" y1="2" y2="6" />
-                      <line x1="8" x2="8" y1="2" y2="6" />
-                      <line x1="3" x2="21" y1="10" y2="10" />
-                      <path d="M8 14h.01" />
-                      <path d="M12 14h.01" />
-                      <path d="M16 14h.01" />
-                      <path d="M8 18h.01" />
-                      <path d="M12 18h.01" />
-                      <path d="M16 18h.01" />
-                    </svg>
-                  </div>
-                  <CardTitle>Digital Certifications</CardTitle>
-                  <CardDescription>
-                    Verified certificates with skill badges and career progression tracking
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-            </Reveal>
-
-            <Reveal delay="xl">
-              <Card>
-                <CardHeader>
-                  <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-6 w-6 text-primary"
-                    >
-                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                      <circle cx="9" cy="7" r="4" />
-                      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                    </svg>
-                  </div>
-                  <CardTitle>Community Support</CardTitle>
-                  <CardDescription>
-                    Connect with healthcare professionals, share experiences, and learn from peers
-                  </CardDescription>
-                </CardHeader>
-              </Card>
+            <Reveal className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3" variant="up" delay="md">
+              {metrics.map(({ value, label, detail }) => (
+                <div key={label} className="landing-metric">
+                  <strong>{value}</strong>
+                  <p className="mt-1 text-sm font-medium text-foreground">{label}</p>
+                  <p className="mt-2 text-sm text-muted-foreground">{detail}</p>
+                </div>
+              ))}
             </Reveal>
           </div>
-        </div>
-      </section>
 
-      {/* CTA Section */}
-      <section className="border-t border-border py-16 md:py-24">
-        <div className="container mx-auto px-4">
-          <div className="mx-auto max-w-2xl text-center">
+          <Reveal as="div" className="mt-14 landing-partners" delay="lg">
+            {partnerLogos.map((partner) => (
+              <span key={partner}>{partner}</span>
+            ))}
+          </Reveal>
+        </section>
+
+        <section id="features" className="landing-section-muted py-20 md:py-28">
+          <div className="landing-section">
+            <div className="mx-auto max-w-2xl text-center">
+              <Reveal as="h2" className="text-balance text-3xl font-bold tracking-tight sm:text-4xl" variant="down">
+                Comprehensive AI guidance for every stage of care delivery
+              </Reveal>
+              <Reveal as="p" className="mt-4 text-pretty leading-relaxed text-muted-foreground" delay="xs">
+                Purpose-built modules, clinical copilots, and deployment intelligence keep your teams prepared for high-stakes healthcare moments.
+              </Reveal>
+            </div>
+
+            <div className="mx-auto mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {featureHighlights.map(({ title, description, icon: Icon, accentClass }) => (
+                <Reveal key={title} variant="up" className="h-full" delay="sm">
+                  <Card className="h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                    <CardHeader className="gap-4">
+                      <div className={cn("landing-feature-icon", accentClass)}>
+                        <Icon className="size-6" />
+                      </div>
+                      <CardTitle>{title}</CardTitle>
+                      <CardDescription>{description}</CardDescription>
+                    </CardHeader>
+                  </Card>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="pillars" className="landing-section py-20 md:py-28">
+          <div className="mx-auto max-w-3xl text-center">
             <Reveal as="h2" className="text-balance text-3xl font-bold tracking-tight sm:text-4xl" variant="down">
-              Ready to Transform Healthcare Training?
+              Build a resilient healthcare workforce ecosystem
             </Reveal>
             <Reveal as="p" className="mt-4 text-pretty leading-relaxed text-muted-foreground" delay="xs">
-              Join thousands of healthcare professionals improving their skills and making a difference in rural India
-            </Reveal>
-            <Reveal as="div" className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center" delay="sm">
-              <Button asChild size="lg" className="text-base">
-                <Link href="/auth/sign-up">Create Free Account</Link>
-              </Button>
+              MedReady AI connects learning, operations, and deployment in one secure platform designed for public health scale.
             </Reveal>
           </div>
-        </div>
-      </section>
 
-      {/* Footer */}
+          <div className="mt-12 grid gap-8 lg:grid-cols-3">
+            {platformPillars.map(({ title, summary, bullets, icon: Icon }) => (
+              <Reveal key={title} variant="up" className="h-full" delay="sm">
+                <Card className="h-full border border-border/80 bg-card/95 shadow-lg">
+                  <CardHeader className="gap-4">
+                    <div className="landing-feature-icon">
+                      <Icon className="size-6" />
+                    </div>
+                    <CardTitle>{title}</CardTitle>
+                    <CardDescription>{summary}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3 pb-6">
+                    {bullets.map((bullet) => (
+                      <div key={bullet} className="flex items-start gap-3 text-sm text-muted-foreground">
+                        <ArrowRight className="mt-1 size-4 text-primary" />
+                        <span>{bullet}</span>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              </Reveal>
+            ))}
+          </div>
+        </section>
+
+        <section id="workflow" className="landing-section-muted py-20 md:py-28">
+          <div className="landing-section">
+            <div className="mx-auto max-w-2xl text-center">
+              <Reveal as="h2" className="text-balance text-3xl font-bold tracking-tight sm:text-4xl" variant="down">
+                How MedReady AI elevates every healthcare worker
+              </Reveal>
+              <Reveal as="p" className="mt-4 text-pretty leading-relaxed text-muted-foreground" delay="xs">
+                A repeatable three-step workflow aligns assessments, coaching, and deployment with measurable outcomes.
+              </Reveal>
+            </div>
+
+            <div className="mt-12 grid gap-8 lg:grid-cols-3">
+              {workflowSteps.map(({ title, description, impact }, index) => (
+                <Reveal key={title} variant="up" delay="sm">
+                  <div className="landing-step" data-step={index + 1}>
+                    <h3 className="text-xl font-semibold text-foreground">{title}</h3>
+                    <p className="mt-3 text-sm text-muted-foreground">{description}</p>
+                    <div className="mt-6 rounded-xl border border-primary/30 bg-primary/10 p-4 text-sm text-primary">
+                      {impact}
+                    </div>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="testimonials" className="landing-section py-20 md:py-28">
+          <div className="grid gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+            <div>
+              <Reveal as="h2" className="text-balance text-3xl font-bold tracking-tight sm:text-4xl" variant="down">
+                Trusted by public health leaders across India
+              </Reveal>
+              <Reveal as="p" className="mt-4 text-pretty leading-relaxed text-muted-foreground" delay="xs">
+                From tier-3 cities to remote primary health centers, MedReady AI equips teams to respond faster, learn continuously, and document every impact metric.
+              </Reveal>
+              <Reveal as="div" className="mt-8 grid gap-4" delay="sm">
+                <div className="rounded-xl border border-border bg-background/80 p-5 text-sm text-muted-foreground">
+                  <p className="font-medium text-foreground">Rapid onboarding</p>
+                  <p className="mt-1">Launch district-wide pilots in under 10 days with ready curricula and deployment playbooks.</p>
+                </div>
+                <div className="rounded-xl border border-border bg-background/80 p-5 text-sm text-muted-foreground">
+                  <p className="font-medium text-foreground">Continuous compliance</p>
+                  <p className="mt-1">Automated audit logs align with state and national health quality frameworks.</p>
+                </div>
+              </Reveal>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2">
+              {testimonials.map(({ quote, name, title }) => (
+                <Reveal key={name} variant="up" delay="sm">
+                  <figure className="landing-testimonial">
+                    <blockquote className="text-base leading-relaxed text-foreground">“{quote}”</blockquote>
+                    <cite>
+                      {name} · {title}
+                    </cite>
+                  </figure>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="landing-section-muted py-20 md:py-28">
+          <div className="landing-section">
+            <div className="mx-auto max-w-3xl text-center">
+              <Reveal as="h2" className="text-balance text-3xl font-bold tracking-tight sm:text-4xl" variant="down">
+                Ready to transform healthcare training?
+              </Reveal>
+              <Reveal as="p" className="mt-4 text-pretty leading-relaxed text-muted-foreground" delay="xs">
+                Join thousands of healthcare professionals improving their skills and making a measurable difference in rural India.
+              </Reveal>
+              <Reveal as="div" className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center" delay="sm">
+                <Button asChild size="lg" className="text-base">
+                  <Link href="/auth/sign-up">Create free account</Link>
+                </Button>
+                <Button asChild size="lg" variant="outline" className="text-base">
+                  <Link href="/auth/login">Book a live demo</Link>
+                </Button>
+              </Reveal>
+            </div>
+          </div>
+        </section>
+      </main>
+
       <footer className="border-t border-border bg-muted/50 py-8">
-        <div className="container mx-auto px-4">
-          <Reveal className="flex flex-col items-center justify-between gap-4 sm:flex-row" variant="up">
-            <p className="text-sm text-muted-foreground">© 2025 MedReady AI. Built for MumbaiHacks 2025.</p>
-            <div className="flex gap-4">
-              <Link href="#" className="text-sm text-muted-foreground hover:text-foreground">
-                Privacy
+        <div className="landing-section">
+          <Reveal className="flex flex-col gap-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between" variant="up">
+            <p>© 2025 MedReady AI. Built for MumbaiHacks 2025.</p>
+            <div className="flex flex-wrap items-center gap-4">
+              <Link href="#features" className="transition-colors hover:text-foreground">
+                Platform
               </Link>
-              <Link href="#" className="text-sm text-muted-foreground hover:text-foreground">
-                Terms
+              <Link href="#workflow" className="transition-colors hover:text-foreground">
+                Workflow
               </Link>
-              <Link href="#" className="text-sm text-muted-foreground hover:text-foreground">
+              <Link href="#testimonials" className="transition-colors hover:text-foreground">
+                Impact
+              </Link>
+              <Link href="mailto:hello@medready.ai" className="transition-colors hover:text-foreground">
                 Contact
               </Link>
             </div>

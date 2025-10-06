@@ -49,6 +49,7 @@
     "clsx": "latest",
     "cmdk": "latest",
     "date-fns": "latest",
+    "dotenv": "^17.2.3",
     "embla-carousel-react": "latest",
     "exa-js": "latest",
     "geist": "latest",

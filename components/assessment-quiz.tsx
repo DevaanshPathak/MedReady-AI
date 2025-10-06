@@ -173,13 +173,31 @@ export function AssessmentQuiz({ assessment, userId, moduleId }: AssessmentQuizP
         time_taken: assessment.time_limit_minutes * 60 - timeRemaining,
       })
 
-      // If assessment passed, try to generate certificate
+      // If assessment passed, mark module as completed and try to generate certificate
       if (passed) {
         try {
+          // First, mark the module as completed in progress table
+          const { error: progressError } = await supabase
+            .from("progress")
+            .upsert({
+              user_id: userId,
+              module_id: moduleId,
+              status: "completed",
+              completion_percent: 100,
+              completed_at: new Date().toISOString(),
+            })
+
+          if (progressError) {
+            console.warn("[v0] Failed to mark module as completed:", progressError)
+          } else {
+            console.log("[v0] Module marked as completed")
+          }
+
+          // Then try to generate certificate
           const certResponse = await fetch("/api/generate-certificate", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ moduleId: assessment.module_id }),
+            body: JSON.stringify({ moduleId: moduleId }),
           })
           
           if (certResponse.ok) {

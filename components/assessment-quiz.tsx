@@ -33,11 +33,63 @@ export function AssessmentQuiz({ assessment, userId, moduleId }: AssessmentQuizP
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showResults, setShowResults] = useState(false)
   const [score, setScore] = useState(0)
+  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false)
+  const [questions, setQuestions] = useState<Question[]>([])
   const router = useRouter()
   const supabase = createClient()
 
-  const questions = Array.isArray(assessment.questions) ? (assessment.questions as Question[]) : []
-  const totalQuestions = questions.length
+  const initialQuestions = Array.isArray(assessment.questions) ? (assessment.questions as Question[]) : []
+  const totalQuestions = questions.length || initialQuestions.length
+
+  // Auto-generate questions if none exist
+  useEffect(() => {
+    if (initialQuestions.length === 0 && !isGeneratingQuestions) {
+      generateQuestions()
+    } else {
+      setQuestions(initialQuestions)
+    }
+  }, [initialQuestions.length, isGeneratingQuestions])
+
+  const generateQuestions = async () => {
+    setIsGeneratingQuestions(true)
+    try {
+      // Get current user from Supabase
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        console.error('User not authenticated')
+        return
+      }
+
+      const response = await fetch('/api/generate-assessment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          moduleId: moduleId,
+          userId: user.id,
+          difficulty: 'medium'
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.assessment && data.assessment.questions) {
+          setQuestions(data.assessment.questions)
+          // Refresh the page to get the updated assessment
+          router.refresh()
+        } else {
+          console.error('Invalid response format:', data)
+        }
+      } else {
+        const errorText = await response.text()
+        console.error('Failed to generate questions:', response.status, errorText)
+      }
+    } catch (error) {
+      console.error('Error generating questions:', error)
+    } finally {
+      setIsGeneratingQuestions(false)
+    }
+  }
 
   // Timer
   useEffect(() => {
@@ -124,8 +176,28 @@ export function AssessmentQuiz({ assessment, userId, moduleId }: AssessmentQuizP
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">
-          <h3 className="mb-2 text-lg font-semibold">No questions available</h3>
-          <p className="text-center text-sm text-muted-foreground">This assessment is being prepared.</p>
+          {isGeneratingQuestions ? (
+            <>
+              <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+              <h3 className="mb-2 text-lg font-semibold">Generating Assessment Questions</h3>
+              <p className="text-center text-sm text-muted-foreground">
+                Our AI is creating personalized assessment questions for this module. This may take up to 30 seconds.
+              </p>
+              <div className="mt-4 w-full max-w-xs">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+                  <div className="h-full animate-pulse bg-primary" style={{ width: "70%" }} />
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <h3 className="mb-2 text-lg font-semibold">No questions available</h3>
+              <p className="text-center text-sm text-muted-foreground mb-4">This assessment is being prepared.</p>
+              <Button onClick={generateQuestions} disabled={isGeneratingQuestions}>
+                {isGeneratingQuestions ? "Generating..." : "Generate Questions"}
+              </Button>
+            </>
+          )}
         </CardContent>
       </Card>
     )

@@ -73,16 +73,44 @@ export function AssessmentQuiz({ assessment, userId, moduleId }: AssessmentQuizP
 
       if (response.ok) {
         const data = await response.json()
-        if (data.assessment && data.assessment.questions) {
-          setQuestions(data.assessment.questions)
-          // Refresh the page to get the updated assessment
-          router.refresh()
+
+        // Accept multiple shapes and normalize to component's Question type
+        const rawQuestions = (data?.assessment?.questions || data?.questions || []) as any[]
+
+        if (Array.isArray(rawQuestions) && rawQuestions.length > 0) {
+          const normalized = rawQuestions.map((q: any) => ({
+            question: q.question,
+            options: q.options,
+            // Support both snake_case and camelCase from API/DB
+            correct_answer: typeof q.correct_answer === 'number' ? q.correct_answer : q.correctAnswer,
+          })) as Question[]
+
+          // Basic validation
+          const valid = normalized.every(
+            (q) => typeof q.question === 'string' && Array.isArray(q.options) && typeof q.correct_answer === 'number'
+          )
+
+          if (valid) {
+            setQuestions(normalized)
+            // Refresh the page to get the updated assessment
+            router.refresh()
+          } else {
+            console.error('Invalid questions after normalization:', normalized)
+          }
         } else {
           console.error('Invalid response format:', data)
         }
       } else {
         const errorText = await response.text()
         console.error('Failed to generate questions:', response.status, errorText)
+        
+        // Try to parse error response
+        try {
+          const errorData = JSON.parse(errorText)
+          console.error('Error details:', errorData)
+        } catch {
+          console.error('Raw error response:', errorText)
+        }
       }
     } catch (error) {
       console.error('Error generating questions:', error)

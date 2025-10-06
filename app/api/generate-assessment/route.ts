@@ -186,7 +186,7 @@ Time limit should be 15 minutes (900 seconds)`,
         .update({
           questions: object.questions,
           passing_score: object.passingScore,
-          time_limit: object.timeLimit,
+          time_limit_minutes: Math.round(object.timeLimit / 60), // Convert seconds to minutes
           updated_at: new Date().toISOString(),
         })
         .eq("id", existingAssessment.id)
@@ -202,7 +202,7 @@ Time limit should be 15 minutes (900 seconds)`,
           title: `${module.title} Assessment`,
           questions: object.questions,
           passing_score: object.passingScore,
-          time_limit: object.timeLimit,
+          time_limit_minutes: Math.round(object.timeLimit / 60), // Convert seconds to minutes
         })
         .select()
         .single()
@@ -212,6 +212,20 @@ Time limit should be 15 minutes (900 seconds)`,
     return Response.json({ assessment })
   } catch (error) {
     console.error("[v0] Generate assessment error:", error)
-    return new Response("Internal Server Error", { status: 500 })
+    console.error("[v0] Error details:", {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      moduleId,
+      userId
+    })
+    return new Response(JSON.stringify({ 
+      error: "Internal Server Error", 
+      details: error instanceof Error ? error.message : 'Unknown error',
+      moduleId,
+      userId 
+    }), { 
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    })
   }
 }

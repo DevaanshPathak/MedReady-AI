@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Reveal } from "@/components/reveal"
+import { DashboardNav } from "@/components/dashboard-nav"
 
 export default async function CertificationsPage() {
   const supabase = await createClient()
@@ -18,13 +19,15 @@ export default async function CertificationsPage() {
     .order("issued_at", { ascending: false })
 
   const { data: progress } = await supabase
-    .from("module_progress")
-    .select("*, learning_modules(*)")
+    .from("progress")
+    .select("*, modules(*)")
     .eq("user_id", user.id)
-    .eq("completed", true)
+    .eq("status", "completed")
 
   const completedModules = progress?.length || 0
-  const activeCerts = certifications?.filter((c) => c.status === "active").length || 0
+  const activeCerts = certifications?.filter((c) => 
+    c.expires_at && new Date(c.expires_at) > new Date()
+  ).length || 0
   const expiringSoon =
     certifications?.filter((c) => {
       if (!c.expires_at) return false
@@ -34,6 +37,7 @@ export default async function CertificationsPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <DashboardNav />
       <div className="container mx-auto px-4 py-6 max-w-7xl">
         <div className="mb-6">
           <Reveal as="h1" className="text-2xl font-bold text-foreground mb-2" variant="down">
@@ -114,19 +118,17 @@ export default async function CertificationsPage() {
                   <div key={cert.id} className="p-4 bg-muted/50 rounded-lg border border-border">
                     <div className="flex items-start justify-between mb-3">
                       <div>
-                        <h3 className="font-semibold text-foreground mb-1">{cert.certification_name}</h3>
-                        <p className="text-sm text-muted-foreground">{cert.issuing_authority}</p>
+                        <h3 className="font-semibold text-foreground mb-1">{cert.skill} Specialist</h3>
+                        <p className="text-sm text-muted-foreground">MedReady AI Certification Board</p>
                       </div>
                       <span
                         className={`px-3 py-1 text-xs font-medium rounded-full ${
-                          cert.status === "active"
+                          cert.expires_at && new Date(cert.expires_at) > new Date()
                             ? "bg-success/20 text-success"
-                            : cert.status === "expired"
-                              ? "bg-destructive/20 text-destructive"
-                              : "bg-muted text-muted-foreground"
+                            : "bg-destructive/20 text-destructive"
                         }`}
                       >
-                        {cert.status}
+                        {cert.expires_at && new Date(cert.expires_at) > new Date() ? "active" : "expired"}
                       </span>
                     </div>
 
@@ -144,8 +146,12 @@ export default async function CertificationsPage() {
                         </div>
                       )}
                       <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Level:</span>
+                        <span className="text-foreground capitalize">{cert.level}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">Certificate ID:</span>
-                        <span className="text-foreground font-mono text-xs">{cert.certificate_id}</span>
+                        <span className="text-foreground font-mono text-xs">{cert.certificate_hash.substring(0, 12)}...</span>
                       </div>
                     </div>
 

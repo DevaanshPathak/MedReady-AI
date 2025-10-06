@@ -109,25 +109,6 @@ export default async function ModulePage({ params }: { params: Promise<{ moduleI
               <h1 className="text-3xl font-bold tracking-tight">{module.title}</h1>
               <p className="mt-2 text-muted-foreground">{module.description}</p>
             </div>
-            <Card className="w-full md:w-64">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Your Progress</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Completion</span>
-                    <span className="font-medium">{progress?.completion_percent || 0}%</span>
-                  </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
-                    <div
-                      className="h-full bg-primary transition-all"
-                      style={{ width: `${progress?.completion_percent || 0}%` }}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
 

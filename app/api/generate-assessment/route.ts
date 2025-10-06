@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     }
 
     // Get module details
-    const { data: module } = await supabase.from("learning_modules").select("*").eq("id", moduleId).single()
+    const { data: module } = await supabase.from("modules").select("*").eq("id", moduleId).single()
 
     if (!module) {
       return new Response("Module not found", { status: 404 })

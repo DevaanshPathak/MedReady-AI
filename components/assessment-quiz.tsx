@@ -82,14 +82,35 @@ export function AssessmentQuiz({ assessment, userId, moduleId }: AssessmentQuizP
 
     // Save result to database
     try {
-      await supabase.from("assessment_results").insert({
+      const passed = finalScore >= assessment.passing_score
+      
+      await supabase.from("assessment_attempts").insert({
         user_id: userId,
         assessment_id: assessment.id,
         score: finalScore,
-        passed: finalScore >= assessment.passing_score,
+        passed: passed,
         answers: answers,
         time_taken: assessment.time_limit_minutes * 60 - timeRemaining,
       })
+
+      // If assessment passed, try to generate certificate
+      if (passed) {
+        try {
+          const certResponse = await fetch("/api/generate-certificate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ moduleId: assessment.module_id }),
+          })
+          
+          if (certResponse.ok) {
+            console.log("[v0] Certificate generated successfully")
+          } else {
+            console.warn("[v0] Certificate generation failed:", await certResponse.text())
+          }
+        } catch (certError) {
+          console.warn("[v0] Certificate generation error:", certError)
+        }
+      }
 
       setShowResults(true)
     } catch (error) {

@@ -37,19 +37,19 @@ export async function POST(req: Request) {
     }
 
     // Get user profile and skills
-    const { data: profile } = await supabase.from("user_profiles").select("*").eq("user_id", userId).single()
+    const { data: profile } = await supabase.from("profiles").select("*").eq("id", userId).single()
 
     // Get user's completed modules and certifications
     const { data: progress } = await supabase
-      .from("user_progress")
-      .select("*, learning_modules(*)")
+      .from("progress")
+      .select("*, modules(*)")
       .eq("user_id", userId)
-      .eq("completed", true)
+      .eq("status", "completed")
 
     const { data: certifications } = await supabase.from("certifications").select("*").eq("user_id", userId)
 
     // Get available rural deployments
-    const { data: deployments } = await supabase.from("rural_deployments").select("*").eq("status", "active").limit(20)
+    const { data: deployments } = await supabase.from("deployments").select("*").limit(20)
 
     // Generate intelligent recommendations using Grok-4-fast-reasoning
     const { object } = await generateObject({
@@ -65,7 +65,7 @@ User Profile:
 - Current Location: ${profile?.location}
 
 Completed Training:
-${progress?.map((p) => `- ${p.learning_modules.title}`).join("\n")}
+${progress?.map((p) => `- ${p.modules.title}`).join("\n")}
 
 Certifications:
 ${certifications?.map((c) => `- ${c.title}`).join("\n")}

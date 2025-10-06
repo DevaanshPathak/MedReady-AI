@@ -1,7 +1,7 @@
 -- Add table for caching AI-generated module content
 CREATE TABLE IF NOT EXISTS module_content_cache (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  module_id UUID NOT NULL REFERENCES learning_modules(id) ON DELETE CASCADE,
+  module_id UUID NOT NULL REFERENCES modules(id) ON DELETE CASCADE,
   content JSONB NOT NULL,
   generated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

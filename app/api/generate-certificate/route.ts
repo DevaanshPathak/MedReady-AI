@@ -16,11 +16,11 @@ export async function POST(request: Request) {
 
     // Check if user completed the module
     const { data: progress } = await supabase
-      .from("module_progress")
-      .select("*, learning_modules(*)")
+      .from("progress")
+      .select("*, modules(*)")
       .eq("user_id", user.id)
       .eq("module_id", moduleId)
-      .eq("completed", true)
+      .eq("status", "completed")
       .single()
 
     if (!progress) {
@@ -28,17 +28,17 @@ export async function POST(request: Request) {
     }
 
     // Check if user passed the assessment
-    const { data: assessment } = await supabase
-      .from("assessments")
-      .select("*")
+    const { data: assessmentAttempt } = await supabase
+      .from("assessment_attempts")
+      .select("*, assessments(*)")
       .eq("user_id", user.id)
-      .eq("module_id", moduleId)
-      .gte("score", 70)
-      .order("completed_at", { ascending: false })
+      .eq("assessments.module_id", moduleId)
+      .eq("passed", true)
+      .order("created_at", { ascending: false })
       .limit(1)
       .single()
 
-    if (!assessment) {
+    if (!assessmentAttempt) {
       return NextResponse.json({ error: "Assessment not passed (minimum 70% required)" }, { status: 400 })
     }
 
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
       .from("certifications")
       .select("*")
       .eq("user_id", user.id)
-      .eq("certification_name", `${progress.learning_modules.title} Specialist`)
+      .eq("module_id", moduleId)
       .single()
 
     if (existingCert) {
@@ -55,20 +55,18 @@ export async function POST(request: Request) {
     }
 
     // Generate certificate
-    const certificateId = `CERT-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
     const verificationHash = Buffer.from(`${user.id}-${moduleId}-${Date.now()}`).toString("base64")
 
     const { data: certificate, error } = await supabase
       .from("certifications")
       .insert({
         user_id: user.id,
-        certification_name: `${progress.learning_modules.title} Specialist`,
-        issuing_authority: "MedReady AI Certification Board",
-        certificate_id: certificateId,
+        module_id: moduleId,
+        skill: progress.modules.title,
+        level: "intermediate",
+        certificate_hash: verificationHash,
         issued_at: new Date().toISOString(),
         expires_at: new Date(Date.now() + 2 * 365 * 24 * 60 * 60 * 1000).toISOString(), // 2 years
-        status: "active",
-        verification_hash: verificationHash,
       })
       .select()
       .single()

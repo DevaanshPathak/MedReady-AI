@@ -35,6 +35,9 @@ export function ModuleContent({ module, progress, userId }: ModuleContentProps) 
   const [isUpdating, setIsUpdating] = useState(false)
   const [aiContent, setAiContent] = useState<AIGeneratedSection[] | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isFromCache, setIsFromCache] = useState(false)
+  const [citations, setCitations] = useState<any[]>([])
+  const [toolCalls, setToolCalls] = useState(0)
   const router = useRouter()
   const supabase = createClient()
 
@@ -47,7 +50,7 @@ export function ModuleContent({ module, progress, userId }: ModuleContentProps) 
         return
       }
 
-      // Generate dynamic content using AI
+      // Generate complete module content using AI with caching
       setIsGenerating(true)
       try {
         const response = await fetch("/api/generate-module-content", {
@@ -58,7 +61,15 @@ export function ModuleContent({ module, progress, userId }: ModuleContentProps) 
 
         if (response.ok) {
           const data = await response.json()
+          // The API now returns the complete chapter with all sections
           setAiContent(data.content.sections)
+          // Store citations and tool call info
+          setCitations(data.citations || [])
+          setToolCalls(data.toolCalls || 0)
+          // Check if content was served from cache (indicated by fast response time)
+          setIsFromCache(response.headers.get('x-cache-status') === 'HIT' || false)
+        } else {
+          console.error("[v0] Failed to generate content:", response.statusText)
         }
       } catch (error) {
         console.error("[v0] Error generating content:", error)
@@ -116,6 +127,7 @@ export function ModuleContent({ module, progress, userId }: ModuleContentProps) 
         .from("progress")
         .update({
           completion_percent: 100,
+          status: "completed",
           completed_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
@@ -135,10 +147,15 @@ export function ModuleContent({ module, progress, userId }: ModuleContentProps) 
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">
           <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          <h3 className="mb-2 text-lg font-semibold">Generating personalized content...</h3>
+          <h3 className="mb-2 text-lg font-semibold">Generating complete module...</h3>
           <p className="text-center text-sm text-muted-foreground">
-            Our AI is creating tailored learning materials for you
+            Our AI is creating the entire chapter content with current medical protocols. This may take up to 90 seconds for comprehensive coverage with latest evidence.
           </p>
+          <div className="mt-4 w-full max-w-xs">
+            <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+              <div className="h-full animate-pulse bg-primary" style={{ width: "60%" }} />
+            </div>
+          </div>
         </CardContent>
       </Card>
     )
@@ -178,9 +195,21 @@ export function ModuleContent({ module, progress, userId }: ModuleContentProps) 
             <CardTitle className="text-base">
               Section {currentSection + 1} of {totalSections}
             </CardTitle>
-            <span className="text-sm text-muted-foreground">
-              {Math.round(((currentSection + 1) / totalSections) * 100)}% Complete
-            </span>
+            <div className="flex items-center gap-2">
+              {isFromCache && (
+                <span className="rounded-full bg-green-100 px-2 py-1 text-xs text-green-700 dark:bg-green-900 dark:text-green-300">
+                  ⚡ Cached
+                </span>
+              )}
+              {toolCalls > 0 && (
+                <span className="rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                  🔍 {toolCalls} Sources
+                </span>
+              )}
+              <span className="text-sm text-muted-foreground">
+                {Math.round(((currentSection + 1) / totalSections) * 100)}% Complete
+              </span>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -349,6 +378,85 @@ export function ModuleContent({ module, progress, userId }: ModuleContentProps) 
           </Button>
         )}
       </div>
+
+      {/* Citations Section */}
+      {citations.length > 0 && (
+        <Card className="border-l-4 border-l-blue-500 bg-blue-50/50 dark:bg-blue-950/20">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-5 w-5 text-blue-600 dark:text-blue-400"
+              >
+                <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
+                <path d="M8 2v20" />
+              </svg>
+              Sources & References
+              <span className="ml-auto text-xs font-normal text-muted-foreground bg-blue-100 dark:bg-blue-900 px-2 py-1 rounded-full">
+                {citations.length} source{citations.length !== 1 ? 's' : ''}
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {citations.map((citation, index) => (
+                <div key={index} className="group rounded-lg border border-blue-200 dark:border-blue-800 bg-white dark:bg-gray-900/50 p-3 hover:shadow-md transition-all duration-200">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900 text-xs font-semibold text-blue-700 dark:text-blue-300 flex-shrink-0">
+                      {index + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <a
+                        href={citation.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block text-sm font-medium text-blue-700 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-100 hover:underline leading-relaxed"
+                      >
+                        {citation.title}
+                      </a>
+                      <div className="flex items-center gap-2 mt-1">
+                        {citation.publishedDate && (
+                          <span className="text-xs text-muted-foreground bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">
+                            {new Date(citation.publishedDate).getFullYear()}
+                          </span>
+                        )}
+                        <span className="text-xs text-muted-foreground">•</span>
+                        <span className="text-xs text-muted-foreground truncate">
+                          {new URL(citation.url).hostname}
+                        </span>
+                      </div>
+                    </div>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="h-4 w-4 text-muted-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <path d="M7 17L17 7" />
+                      <path d="M7 7h10v10" />
+                    </svg>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 pt-3 border-t border-blue-200 dark:border-blue-800">
+              <p className="text-xs text-muted-foreground text-center">
+                💡 These sources provide the latest evidence-based information used in this module
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

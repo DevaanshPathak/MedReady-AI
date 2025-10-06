@@ -1,8 +1,10 @@
 import { generateObject } from "ai"
 import { z } from "zod"
 import { createClient } from "@/lib/supabase/server"
+import { redis } from "@/lib/redis"
+import { medicalWebSearch } from "@/lib/web-search-tool"
 
-export const maxDuration = 30
+export const maxDuration = 90
 
 const moduleContentSchema = z.object({
   sections: z.array(
@@ -11,7 +13,7 @@ const moduleContentSchema = z.object({
       content: z.string(),
       keyPoints: z.array(z.string()),
       practicalTips: z.array(z.string()),
-      warningsSigns: z.array(z.string()).optional(),
+      warningSigns: z.array(z.string()).optional(),
     }),
   ),
   estimatedDuration: z.number(),
@@ -34,44 +36,70 @@ export async function POST(req: Request) {
     }
 
     // Get module details
-    const { data: module } = await supabase.from("learning_modules").select("*").eq("id", moduleId).single()
+    const { data: module } = await supabase.from("modules").select("*").eq("id", moduleId).single()
 
     if (!module) {
       return new Response("Module not found", { status: 404 })
     }
 
     // Get user profile for personalization
-    const { data: profile } = await supabase.from("user_profiles").select("*").eq("user_id", userId).single()
+    const { data: profile } = await supabase.from("profiles").select("*").eq("id", userId).single()
 
-    // Generate dynamic content using Grok-4-fast-reasoning
-    const { object } = await generateObject({
+    // Check Redis cache first (shorter cache duration due to web search)
+    const cacheKey = `module_content:${moduleId}:${profile?.specialization || 'general'}`
+    
+    try {
+      const cachedContent = await redis.get(cacheKey)
+      if (cachedContent) {
+        console.log(`[v0] Returning cached content for module ${moduleId}`)
+        // Upstash Redis automatically deserializes JSON objects
+        return Response.json({ content: cachedContent })
+      }
+    } catch (cacheError) {
+      console.warn("[v0] Redis cache error:", cacheError)
+      // Continue with generation if cache fails
+    }
+
+    // Generate complete chapter content with web search for current protocols
+    const { object, toolCalls, toolResults } = await generateObject({
       model: "xai/grok-4-fast-reasoning",
       schema: moduleContentSchema,
-      prompt: `Generate comprehensive, evidence-based learning content for healthcare workers in rural India.
-
-Note: If you need the most current medical guidelines or recent research, use the web search tool to find up-to-date information from trusted medical sources.
+      prompt: `Generate a COMPLETE, comprehensive learning module for healthcare workers in rural India.
 
 Module: ${module.title}
 Description: ${module.description}
 Category: ${module.category}
 Target Audience: ${profile?.role || "Healthcare Worker"} with ${profile?.specialization || "general"} specialization
 
-Requirements:
-1. Create 4-6 detailed sections covering the topic comprehensively
-2. Each section should have:
-   - Clear, actionable content (200-300 words)
-   - 3-5 key points to remember
-   - 2-4 practical tips for rural healthcare settings
-   - Warning signs to watch for (if applicable)
-3. Follow Indian national health protocols and WHO guidelines
-4. Consider resource limitations in rural settings
-5. Use simple, clear language
-6. Include specific dosages, protocols, and procedures
-7. Mention when to refer to higher facilities
-8. Focus on practical, implementable knowledge
+CRITICAL: Use the web search tool to find the most current medical protocols, guidelines, and evidence-based practices from trusted sources like WHO, ICMR, CDC, and medical journals. Include proper citations with links in your response.
 
-Make the content highly practical, evidence-based, and tailored for rural Indian healthcare workers.`,
-      temperature: 0.8,
+IMPORTANT: Generate the ENTIRE module content in one go. Create 6-8 comprehensive sections that cover the topic completely.
+
+Requirements for EACH section:
+1. Detailed, actionable content (300-400 words per section) with current protocols
+2. 4-6 key points to remember based on latest evidence
+3. 3-5 practical tips specifically for rural healthcare settings
+4. Warning signs to watch for (when applicable)
+5. Specific protocols, dosages, and procedures from current guidelines
+6. Clear referral criteria to higher facilities
+7. Include citations to current medical sources and guidelines
+
+Overall Module Requirements:
+- Follow CURRENT Indian national health protocols (MoHFW, ICMR) and WHO guidelines
+- Include latest research findings and evidence-based practices
+- Consider resource limitations in rural settings
+- Use simple, clear language accessible to all healthcare workers
+- Address common scenarios in rural Indian healthcare
+- Provide comprehensive coverage from basics to advanced topics
+- Include emergency protocols and first aid procedures
+- Cover prevention, diagnosis, and treatment aspects
+- Cite current medical literature and official guidelines
+
+Make this a complete, self-contained learning resource that a healthcare worker can use to master the topic with the most up-to-date information available.`,
+      tools: {
+        medicalWebSearch,
+      },
+      temperature: 0.7,
     })
 
     // Store generated content in database
@@ -81,7 +109,32 @@ Make the content highly practical, evidence-based, and tailored for rural Indian
       generated_at: new Date().toISOString(),
     })
 
-    return Response.json({ content: object })
+    // Cache in Redis for 8 hours (shorter due to web search for current data)
+    try {
+      await redis.setex(cacheKey, 28800, object)
+      console.log(`[v0] Cached content for module ${moduleId}`)
+    } catch (cacheError) {
+      console.warn("[v0] Failed to cache content:", cacheError)
+      // Don't fail the request if caching fails
+    }
+
+    // Extract citations from web search results
+    const citations = toolResults?.flatMap(result => {
+      if (result.toolName === 'medicalWebSearch' && Array.isArray(result)) {
+        return result.map((item: any) => ({
+          title: item.title,
+          url: item.url,
+          publishedDate: item.publishedDate
+        }))
+      }
+      return []
+    }) || []
+
+    return Response.json({ 
+      content: object,
+      citations: citations,
+      toolCalls: toolCalls?.length || 0
+    })
   } catch (error) {
     console.error("[v0] Generate module content error:", error)
     return new Response("Internal Server Error", { status: 500 })

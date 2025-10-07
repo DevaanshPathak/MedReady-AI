@@ -49,7 +49,7 @@ A comprehensive AI-powered platform for healthcare workforce training, deploymen
 
 ### Prerequisites
 
-- Node.js 18+ installed
+- Node.js 18+ installed.
 - Supabase account and project
 - OpenAI API key (optional, uses Vercel AI Gateway by default)
 

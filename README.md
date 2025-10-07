@@ -6,7 +6,7 @@ A comprehensive AI-powered platform for healthcare workforce training, deploymen
 
 ### 1. Adaptive Learning System
 - Interactive learning modules covering Emergency Response, Maternal Health, Pediatrics, and Infectious Diseases
-- Progress tracking with automatic save functionality
+- Progress tracking with automatic save functionality.
 - Timed assessments with instant scoring
 - Section-by-section content navigation
 

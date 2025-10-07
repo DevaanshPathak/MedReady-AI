@@ -45,7 +45,7 @@
     "@supabase/ssr": "latest",
     "@supabase/supabase-js": "latest",
     "@types/react-syntax-highlighter": "^15.5.13",
-    "@upstash/redis": "^1.35.4",
+    "@upstash/redis": "^1.35.5",
     "@vercel/analytics": "latest",
     "ai": "latest",
     "autoprefixer": "latest",

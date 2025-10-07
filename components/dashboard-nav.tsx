@@ -140,10 +140,10 @@ export function DashboardNav() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 shadow-sm transition-all duration-300">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-6">
-          <Link href="/dashboard">
+          <Link href="/dashboard" className="transition-transform hover:scale-105">
             <MedReadyLogo size="sm" />
           </Link>
           <nav className="hidden items-center gap-1 md:flex">
@@ -152,8 +152,10 @@ export function DashboardNav() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
-                  pathname === item.href ? "bg-accent text-accent-foreground" : "text-muted-foreground",
+                  "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground active:scale-95",
+                  pathname === item.href 
+                    ? "bg-accent text-accent-foreground shadow-sm" 
+                    : "text-muted-foreground hover:shadow-sm",
                 )}
               >
                 {item.icon}
@@ -164,20 +166,22 @@ export function DashboardNav() {
         </div>
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <Button variant="ghost" onClick={handleSignOut}>
+          <Button variant="ghost" onClick={handleSignOut} className="transition-all hover:bg-destructive/10 hover:text-destructive">
             Sign Out
           </Button>
         </div>
       </div>
       {/* Mobile Navigation */}
-      <nav className="flex items-center gap-1 overflow-x-auto border-t border-border px-4 py-2 md:hidden">
+      <nav className="flex items-center gap-1 overflow-x-auto border-t border-border/40 px-4 py-2 md:hidden backdrop-blur-xl">
         {navItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
             className={cn(
-              "flex flex-col items-center gap-1 rounded-md px-3 py-2 text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
-              pathname === item.href ? "bg-accent text-accent-foreground" : "text-muted-foreground",
+              "flex flex-col items-center gap-1 rounded-lg px-3 py-2 text-xs font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground active:scale-95",
+              pathname === item.href 
+                ? "bg-accent text-accent-foreground shadow-sm" 
+                : "text-muted-foreground hover:shadow-sm",
             )}
           >
             {item.icon}

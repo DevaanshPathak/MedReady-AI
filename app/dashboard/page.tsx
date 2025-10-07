@@ -37,6 +37,14 @@ export default async function DashboardPage() {
     .order("created_at", { ascending: false })
     .limit(3)
 
+  // Fetch recent assessment attempts
+  const { data: recentAttempts } = await supabase
+    .from("assessment_attempts")
+    .select("*, assessment:assessments(title)")
+    .eq("user_id", user.id)
+    .order("completed_at", { ascending: false })
+    .limit(3)
+
   return (
     <div className="min-h-screen bg-background">
       <DashboardNav />
@@ -168,12 +176,20 @@ export default async function DashboardPage() {
           <Reveal delay="sm">
             <Card>
             <CardHeader>
-              <CardTitle>Deployment Opportunities</CardTitle>
-              <CardDescription>Available positions</CardDescription>
+              <CardTitle>Recent Assessments</CardTitle>
+              <CardDescription>Your latest quiz attempts</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-4xl font-bold">4</div>
-              <p className="mt-2 text-sm text-muted-foreground">Matching your skills</p>
+              <div className="text-4xl font-bold text-accent">{recentAttempts?.length || 0}</div>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {recentAttempts && recentAttempts.length > 0 ? (
+                  <Link href="/learn/history" className="text-primary hover:underline">
+                    View history →
+                  </Link>
+                ) : (
+                  "Take your first assessment"
+                )}
+              </p>
             </CardContent>
           </Card>
           </Reveal>

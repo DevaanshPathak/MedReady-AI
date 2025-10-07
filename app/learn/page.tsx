@@ -32,12 +32,36 @@ export default async function LearnPage() {
       <DashboardNav />
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <Reveal as="h1" className="text-3xl font-bold tracking-tight" variant="down">
-            Learning Modules
-          </Reveal>
-          <Reveal as="p" className="text-muted-foreground" delay="xs">
-            Explore courses designed for healthcare professionals
-          </Reveal>
+          <div className="flex items-center justify-between">
+            <div>
+              <Reveal as="h1" className="text-3xl font-bold tracking-tight" variant="down">
+                Learning Modules
+              </Reveal>
+              <Reveal as="p" className="text-muted-foreground" delay="xs">
+                Explore courses designed for healthcare professionals
+              </Reveal>
+            </div>
+            <Reveal variant="scale" delay="sm">
+              <Button asChild variant="outline">
+                <Link href="/learn/history">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="mr-2 h-4 w-4"
+                  >
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                    <path d="M3 3v5h5" />
+                  </svg>
+                  Assessment History
+                </Link>
+              </Button>
+            </Reveal>
+          </div>
         </div>
 
         {/* Filter/Category Section */}

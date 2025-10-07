@@ -6,7 +6,11 @@ A comprehensive AI-powered platform for healthcare workforce training, deploymen
 
 ### 1. Adaptive Learning System
 - Interactive learning modules covering Emergency Response, Maternal Health, Pediatrics, and Infectious Diseases
-- Progress tracking with automatic save functionality.
+- Progress tracking with automatic save functionality
+- **🧠 Spaced Repetition Algorithm** - SM-2 based intelligent review scheduling
+- **⏱️ Timed Quiz Mode** - Practice under pressure with countdown timer and pause/resume
+- **📌 Bookmarking Questions** - Save difficult questions with personal notes
+- **👥 Social Learning** - Share progress with peers and build learning community
 - Timed assessments with instant scoring
 - Section-by-section content navigation
 
@@ -43,6 +47,8 @@ A comprehensive AI-powered platform for healthcare workforce training, deploymen
 - **Database**: Supabase (PostgreSQL)
 - **Authentication**: Supabase Auth
 - **AI**: OpenAI GPT-4 via Vercel AI SDK
+- **Testing**: Jest + React Testing Library
+- **CI/CD**: GitHub Actions
 - **Deployment**: Vercel
 
 ## Getting Started
@@ -56,9 +62,9 @@ A comprehensive AI-powered platform for healthcare workforce training, deploymen
 ### Installation
 
 1. Clone the repository
-2. Install dependencies:
+2. Install dependencies (using pnpm):
    \`\`\`bash
-   npm install
+   pnpm install
    \`\`\`
 
 3. Set up environment variables (already configured in Vercel):
@@ -66,15 +72,58 @@ A comprehensive AI-powered platform for healthcare workforce training, deploymen
    - Database connection strings (POSTGRES_URL, etc.)
 
 4. Run the database migrations:
-   - Execute scripts in order: 001 through 007
+   - Execute scripts in order: 001 through 009
    - Scripts are located in the `/scripts` folder
 
 5. Start the development server:
    \`\`\`bash
-   npm run dev
+   pnpm dev
    \`\`\`
 
 6. Open [http://localhost:3000](http://localhost:3000)
+
+## Testing
+
+This project has comprehensive test coverage with Jest and React Testing Library.
+
+### Running Tests
+
+\`\`\`bash
+# Run all tests
+pnpm test
+
+# Run tests in watch mode (development)
+pnpm test:watch
+
+# Run tests with coverage report
+pnpm test:coverage
+
+# Run tests in CI mode
+pnpm test:ci
+\`\`\`
+
+### Test Coverage
+
+- **40 unit tests** covering components, utilities, and pages
+- **100% pass rate** - All tests passing
+- **Coverage thresholds**: 50% for branches, functions, lines, and statements
+
+See [TESTING.md](./TESTING.md) for detailed testing documentation.
+
+### CI/CD Pipeline
+
+All code changes are automatically tested via GitHub Actions:
+
+- ✅ **Dependency Security Check** - `pnpm audit` for vulnerabilities
+- ✅ **Lint Check** - ESLint code quality verification
+- ✅ **Type Check** - TypeScript compilation validation
+- ✅ **Unit Tests** - Jest test suite with coverage
+- ✅ **Build Verification** - Next.js production build
+- ✅ **CodeQL Analysis** - Security vulnerability scanning
+- ✅ **Dependency Review** - Automated dependency updates via Dependabot
+
+![CI Tests](https://github.com/your-username/medready-ai/actions/workflows/ci.yml/badge.svg)
+![CodeQL](https://github.com/your-username/medready-ai/actions/workflows/codeql.yml/badge.svg)
 
 ## Database Schema
 
@@ -112,7 +161,14 @@ The platform uses a comprehensive PostgreSQL schema with Row Level Security:
 ## Project Structure
 
 \`\`\`
-├── app/                    # Next.js app directory
+├── .github/
+│   ├── workflows/         # GitHub Actions CI/CD pipelines
+│   └── dependabot.yml     # Automated dependency updates
+├── __tests__/             # Jest unit tests
+│   ├── components/        # Component tests
+│   ├── lib/               # Utility tests
+│   └── app/               # Page tests
+├── app/                   # Next.js app directory
 │   ├── auth/              # Authentication pages
 │   ├── dashboard/         # Main dashboard
 │   ├── learn/             # Learning modules
@@ -124,7 +180,10 @@ The platform uses a comprehensive PostgreSQL schema with Row Level Security:
 ├── components/            # React components
 ├── lib/                   # Utility functions and Supabase clients
 ├── scripts/               # Database migration scripts
-└── public/                # Static assets
+├── public/                # Static assets
+├── jest.config.js         # Jest configuration
+├── jest.setup.js          # Test environment setup
+└── TESTING.md             # Testing documentation
 \`\`\`
 
 ## Team

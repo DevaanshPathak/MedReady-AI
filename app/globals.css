@@ -2,29 +2,29 @@
 @import "tw-animate-css";
 
 :root {
-  /* PRD Color Palette */
-  --primary: 204 100% 40%;        /* Medical Blue #0066CC */
+  /* PRD Color Palette - Enhanced for Professional UI */
+  --primary: 204 100% 42%;        /* Medical Blue #0066CC */
   --secondary: 162 100% 33%;      /* Healthcare Green #00A86B */
   --accent: 16 100% 60%;          /* Alert Orange #FF6B35 */
-  --background: 248 250 252;      /* Light Gray #F8FAFC */
-  --surface: 255 255 255;         /* White #FFFFFF */
-  --text: 30 41 59;               /* Dark Gray #1E293B */
+  --background: 0 0% 100%;        /* Pure White #FFFFFF */
+  --surface: 0 0% 100%;           /* White #FFFFFF */
+  --text: 222 47% 11%;            /* Deep Slate #0F172A */
 
-  /* Light theme */
+  /* Light theme - Vercel-inspired */
   --foreground: var(--text);
   --card: var(--surface);
   --card-foreground: var(--text);
   --popover: var(--surface);
   --popover-foreground: var(--text);
-  --primary-foreground: 255 255 255;
-  --secondary-foreground: var(--text);
-  --muted: 248 250 252;
-  --muted-foreground: 100 116 139;
+  --primary-foreground: 0 0% 100%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 210 40% 98%;           /* Very light gray */
+  --muted-foreground: 215 16% 47%; /* Neutral gray */
   --accent-foreground: var(--text);
-  --destructive: 239 68 68;
-  --destructive-foreground: 255 255 255;
-  --border: 226 232 240;
-  --input: 226 232 240;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 214 32% 91%;          /* Soft border */
+  --input: 214 32% 91%;
   --ring: var(--primary);
   --chart-1: var(--primary);
   --chart-2: var(--secondary);
@@ -43,25 +43,25 @@
 }
 
 .dark {
-  /* Dark theme with PRD colors */
-  --background: 15 23 42;         /* Dark background */
-  --foreground: 248 250 252;      /* Light text */
-  --card: 30 41 59;               /* Dark card */
-  --card-foreground: 248 250 252;
-  --popover: 30 41 59;
-  --popover-foreground: 248 250 252;
-  --primary: 204 100% 40%;        /* Medical Blue #0066CC */
-  --primary-foreground: 255 255 255;
-  --secondary: 162 100% 33%;      /* Healthcare Green #00A86B */
-  --secondary-foreground: 255 255 255;
-  --muted: 51 65 85;
-  --muted-foreground: 148 163 184;
-  --accent: 16 100% 60%;          /* Alert Orange #FF6B35 */
-  --accent-foreground: 255 255 255;
-  --destructive: 239 68 68;
-  --destructive-foreground: 255 255 255;
-  --border: 51 65 85;
-  --input: 51 65 85;
+  /* Dark theme - Vercel-inspired deep contrast */
+  --background: 0 0% 0%;          /* True black #000000 */
+  --foreground: 0 0% 98%;         /* Almost white */
+  --card: 240 10% 4%;             /* Very dark card #0A0A0B */
+  --card-foreground: 0 0% 98%;
+  --popover: 240 10% 4%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 204 100% 50%;        /* Brighter blue for dark mode */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 162 100% 40%;      /* Adjusted green */
+  --secondary-foreground: 0 0% 100%;
+  --muted: 240 4% 16%;            /* Subtle gray #27272A */
+  --muted-foreground: 240 5% 65%; /* Mid gray */
+  --accent: 16 100% 60%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 240 4% 16%;           /* Subtle border */
+  --input: 240 4% 16%;
   --ring: var(--primary);
   --chart-1: var(--primary);
   --chart-2: var(--secondary);
@@ -122,8 +122,26 @@
   * {
     @apply border-border outline-ring/50;
   }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+  
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+  }
+  
+  /* Smooth transitions for interactive elements */
+  button, a, input, select, textarea {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* Better focus visible styles */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
   }
 }
 

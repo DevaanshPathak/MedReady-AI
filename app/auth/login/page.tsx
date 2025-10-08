@@ -41,6 +41,26 @@ export default function LoginPage() {
     }
   }
 
+  const handleQuickLogin = async (email: string, password: string) => {
+    const supabase = createClient()
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+      if (error) throw error
+      router.push("/dashboard")
+      router.refresh()
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : "An error occurred")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-muted/30 to-background p-4">
       <div className="w-full max-w-md">
@@ -107,6 +127,62 @@ export default function LoginPage() {
                   )}
                 </Button>
               </form>
+
+              <div className="mt-6">
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-border/50" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card px-2 text-muted-foreground">Quick Login</span>
+                  </div>
+                </div>
+
+                <div className="mt-6 space-y-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full h-auto py-3 justify-start gap-3 font-medium hover:bg-muted/50 transition-all"
+                    disabled={isLoading}
+                    onClick={() => handleQuickLogin("admin@medready.test", "admin123")}
+                  >
+                    <span className="text-lg">👑</span>
+                    <div className="flex flex-col items-start text-left">
+                      <span className="text-sm">Administrator</span>
+                      <span className="text-xs text-muted-foreground font-normal">Full system access</span>
+                    </div>
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full h-auto py-3 justify-start gap-3 font-medium hover:bg-muted/50 transition-all"
+                    disabled={isLoading}
+                    onClick={() => handleQuickLogin("nurse@medready.test", "nurse123")}
+                  >
+                    <span className="text-lg">👩‍⚕️</span>
+                    <div className="flex flex-col items-start text-left">
+                      <span className="text-sm">Healthcare Worker</span>
+                      <span className="text-xs text-muted-foreground font-normal">Learning & deployments</span>
+                    </div>
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full h-auto py-3 justify-start gap-3 font-medium hover:bg-muted/50 transition-all"
+                    disabled={isLoading}
+                    onClick={() => handleQuickLogin("hospital@medready.test", "hospital123")}
+                  >
+                    <span className="text-lg">🏥</span>
+                    <div className="flex flex-col items-start text-left">
+                      <span className="text-sm">Institution</span>
+                      <span className="text-xs text-muted-foreground font-normal">Manage workforce & analytics</span>
+                    </div>
+                  </Button>
+                </div>
+              </div>
+
               <div className="mt-6 text-center text-sm text-muted-foreground">
                 Don't have an account?{" "}
                 <Link href="/auth/sign-up" className="font-semibold text-primary hover:underline transition-colors">

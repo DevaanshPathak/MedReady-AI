@@ -36,7 +36,7 @@ export default async function ChatPage() {
 
   // Get the most recent session's messages for initial load
   const currentSession = chatSessions?.[0]
-  const initialMessages = currentSession?.chat_messages?.sort((a, b) => 
+  const initialMessages = currentSession?.chat_messages?.sort((a: any, b: any) => 
     new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
   ) || []
 

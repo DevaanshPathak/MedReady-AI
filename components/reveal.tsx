@@ -8,7 +8,7 @@ type RevealVariant = "up" | "down" | "left" | "right" | "scale"
 type RevealDelay = "none" | "xs" | "sm" | "md" | "lg" | "xl"
 
 type RevealProps = {
-  as?: keyof JSX.IntrinsicElements
+  as?: keyof React.JSX.IntrinsicElements
   children: ReactNode
   className?: string
   variant?: RevealVariant

@@ -103,8 +103,13 @@ const assessmentSchema = z.object({
 })
 
 export async function POST(req: Request) {
+  let moduleId: string | undefined
+  let userId: string | undefined
   try {
-    const { moduleId, userId, difficulty } = await req.json()
+    const parsed = await req.json()
+    moduleId = parsed.moduleId
+    userId = parsed.userId
+    const { difficulty } = parsed
 
     const supabase = await createClient()
 

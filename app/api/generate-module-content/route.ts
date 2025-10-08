@@ -60,8 +60,8 @@ export async function POST(req: Request) {
       // Continue with generation if cache fails
     }
 
-    // Generate complete chapter content with web search for current protocols
-    const { object, toolCalls, toolResults } = await generateObject({
+    // Generate complete chapter content
+    const { object } = await generateObject({
       model: "xai/grok-4-fast-reasoning",
       schema: moduleContentSchema,
       prompt: `Generate a COMPLETE, comprehensive learning module for healthcare workers in rural India.
@@ -70,8 +70,6 @@ Module: ${module.title}
 Description: ${module.description}
 Category: ${module.category}
 Target Audience: ${profile?.role || "Healthcare Worker"} with ${profile?.specialization || "general"} specialization
-
-CRITICAL: Use the web search tool to find the most current medical protocols, guidelines, and evidence-based practices from trusted sources like WHO, ICMR, CDC, and medical journals. Include proper citations with links in your response.
 
 IMPORTANT: Generate the ENTIRE module content in one go. Create 6-8 comprehensive sections that cover the topic completely.
 
@@ -82,7 +80,6 @@ Requirements for EACH section:
 4. Warning signs to watch for (when applicable)
 5. Specific protocols, dosages, and procedures from current guidelines
 6. Clear referral criteria to higher facilities
-7. Include citations to current medical sources and guidelines
 
 Overall Module Requirements:
 - Follow CURRENT Indian national health protocols (MoHFW, ICMR) and WHO guidelines
@@ -93,12 +90,8 @@ Overall Module Requirements:
 - Provide comprehensive coverage from basics to advanced topics
 - Include emergency protocols and first aid procedures
 - Cover prevention, diagnosis, and treatment aspects
-- Cite current medical literature and official guidelines
 
 Make this a complete, self-contained learning resource that a healthcare worker can use to master the topic with the most up-to-date information available.`,
-      tools: {
-        medicalWebSearch,
-      },
       temperature: 0.7,
     })
 
@@ -118,22 +111,12 @@ Make this a complete, self-contained learning resource that a healthcare worker 
       // Don't fail the request if caching fails
     }
 
-    // Extract citations from web search results
-    const citations = toolResults?.flatMap(result => {
-      if (result.toolName === 'medicalWebSearch' && Array.isArray(result)) {
-        return result.map((item: any) => ({
-          title: item.title,
-          url: item.url,
-          publishedDate: item.publishedDate
-        }))
-      }
-      return []
-    }) || []
+    // No citations from web search in this version
+    const citations: any[] = []
 
     return Response.json({ 
       content: object,
-      citations: citations,
-      toolCalls: toolCalls?.length || 0
+      citations: citations
     })
   } catch (error) {
     console.error("[v0] Generate module content error:", error)

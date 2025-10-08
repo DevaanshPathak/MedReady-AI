@@ -42,7 +42,7 @@ export async function searchMedicalKnowledge(options: MedicalSearchOptions) {
       numResults: options.numResults || 5,
       includeDomains: medicalDomains,
       useAutoprompt: true,
-      text: options.includeText !== false,
+      text: options.includeText !== false ? { maxCharacters: 2000 } : false,
       highlights: true,
     })
 
@@ -59,7 +59,6 @@ export async function findSimilarMedicalContent(url: string, numResults = 3) {
   try {
     const results = await exa.findSimilar(url, {
       numResults,
-      useAutoprompt: true,
     })
 
     return results

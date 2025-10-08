@@ -12,7 +12,7 @@ A comprehensive AI-powered platform for healthcare workforce training, deploymen
 - **📌 Bookmarking Questions** - Save difficult questions with personal notes
 - **👥 Social Learning** - Share progress with peers and build learning community
 - Timed assessments with instant scoring
-- Section-by-section content navigation
+- Section-by-section content navigation.
 
 ### 2. AI-Powered Knowledge Sync
 - Real-time medical chatbot powered by OpenAI GPT-4

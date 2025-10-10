@@ -15,7 +15,7 @@ A comprehensive AI-powered platform for healthcare workforce training, deploymen
 - Section-by-section content navigation
 
 ### 2. AI-Powered Knowledge Sync
-- Real-time medical chatbot powered by OpenAI GPT-4
+- Real-time medical chatbot powered by Vercel AI Gateway
 - Context-aware responses based on user role and specialization
 - Searchable knowledge base with latest medical protocols
 - Drug interaction information and treatment guidelines

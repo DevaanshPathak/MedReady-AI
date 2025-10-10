@@ -110,10 +110,39 @@ export async function POST(req: Request) {
     const body = await req.json()
     console.log("Completion API received body:", JSON.stringify(body, null, 2))
     console.log("Body keys:", Object.keys(body))
-    
-    const { prompt, userId, userRole, specialization, location, category } = body
-    
-    console.log("Extracted values:", { prompt, userId, userRole, specialization, location, category })
+
+    let {
+      prompt,
+      userId,
+      userRole,
+      specialization,
+      location,
+      category,
+      sessionId,
+    } = body
+
+    // Support useChat style payloads that send a messages array
+    if (!prompt && Array.isArray(body.messages)) {
+      const lastUserMessage = [...body.messages].reverse().find((message: any) => message?.role === "user")
+      if (lastUserMessage) {
+        prompt = typeof lastUserMessage.content === "string" ? lastUserMessage.content : undefined
+        const metadata = lastUserMessage.data ?? {}
+        userId = userId ?? metadata.userId
+        userRole = userRole ?? metadata.userRole
+        specialization = specialization ?? metadata.specialization
+        location = location ?? metadata.location
+        category = category ?? metadata.category
+        sessionId = sessionId ?? metadata.sessionId
+        console.log("Extracted values from messages:", { prompt, userId, userRole, specialization, location, category, sessionId })
+      }
+    }
+
+    if (!prompt || !userId) {
+      console.log("Missing prompt or userId", { hasPrompt: Boolean(prompt), hasUserId: Boolean(userId) })
+      return new Response("Bad Request", { status: 400 })
+    }
+
+    console.log("Extracted values:", { prompt, userId, userRole, specialization, location, category, sessionId })
 
     const supabase = await createClient()
 
@@ -161,17 +190,20 @@ You must ALWAYS:
     // Save user message to database first
     try {
       // Create a chat session if it doesn't exist
-      const { data: session } = await supabase
+      let activeSessionId = sessionId
+      const { data: session } = !activeSessionId
+        ? await supabase
         .from("chat_sessions")
         .select("id")
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(1)
         .single()
+        : { data: { id: activeSessionId } as any }
 
-      let sessionId = session?.id
-      if (!sessionId) {
-        const { data: newSession } = await supabase
+      activeSessionId = activeSessionId ?? session?.id
+      if (!activeSessionId) {
+        const { data: newSession, error: newSessionError } = await supabase
           .from("chat_sessions")
           .insert({
             user_id: userId,
@@ -179,12 +211,15 @@ You must ALWAYS:
           })
           .select("id")
           .single()
-        sessionId = newSession?.id
+        if (newSessionError) {
+          throw newSessionError
+        }
+        activeSessionId = newSession?.id
       }
 
-      if (sessionId) {
+      if (activeSessionId) {
         await supabase.from("chat_messages").insert({
-          session_id: sessionId,
+          session_id: activeSessionId,
           role: "user",
           content: prompt,
         })
@@ -231,17 +266,20 @@ Please search for current information and provide a detailed, structured respons
 
     // Save assistant message to database
     try {
-      const { data: session } = await supabase
+      let activeSessionId = sessionId
+      const { data: session } = !activeSessionId
+        ? await supabase
         .from("chat_sessions")
         .select("id")
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(1)
         .single()
+        : { data: { id: activeSessionId } as any }
 
-      let sessionId = session?.id
-      if (!sessionId) {
-        const { data: newSession } = await supabase
+      activeSessionId = activeSessionId ?? session?.id
+      if (!activeSessionId) {
+        const { data: newSession, error: newSessionError } = await supabase
           .from("chat_sessions")
           .insert({
             user_id: userId,
@@ -249,12 +287,15 @@ Please search for current information and provide a detailed, structured respons
           })
           .select("id")
           .single()
-        sessionId = newSession?.id
+        if (newSessionError) {
+          throw newSessionError
+        }
+        activeSessionId = newSession?.id
       }
 
-      if (sessionId) {
+      if (activeSessionId) {
         await supabase.from("chat_messages").insert({
-          session_id: sessionId,
+          session_id: activeSessionId,
           role: "assistant",
           content: text,
         })

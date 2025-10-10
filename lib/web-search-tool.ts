@@ -14,26 +14,26 @@ export const medicalWebSearch = tool({
       return []
     }
 
-    const exa = getExaClient()
-    
-    // Target trusted medical sources for healthcare workers
-    const medicalDomains = [
-      "who.int",
-      "cdc.gov", 
-      "nih.gov",
-      "mohfw.gov.in", // Ministry of Health India
-      "icmr.gov.in", // Indian Council of Medical Research
-      "pubmed.ncbi.nlm.nih.gov",
-      "bmj.com",
-      "thelancet.com", 
-      "nejm.org",
-      "jamanetwork.com",
-      "mayoclinic.org",
-      "webmd.com",
-      "medscape.com"
-    ]
-
     try {
+      const exa = getExaClient()
+      
+      // Target trusted medical sources for healthcare workers
+      const medicalDomains = [
+        "who.int",
+        "cdc.gov", 
+        "nih.gov",
+        "mohfw.gov.in", // Ministry of Health India
+        "icmr.gov.in", // Indian Council of Medical Research
+        "pubmed.ncbi.nlm.nih.gov",
+        "bmj.com",
+        "thelancet.com", 
+        "nejm.org",
+        "jamanetwork.com",
+        "mayoclinic.org",
+        "webmd.com",
+        "medscape.com"
+      ]
+
       console.log('[v0] Executing medical web search with query:', query)
       const { results } = await exa.searchAndContents(query.trim(), {
         livecrawl: 'always',
@@ -52,6 +52,10 @@ export const medicalWebSearch = tool({
         highlights: result.highlights || [],
       }))
     } catch (error) {
+      if (error instanceof Error && error.message.includes('EXA_API_KEY')) {
+        console.warn('[v0] EXA_API_KEY missing, returning empty search results')
+        return []
+      }
       console.error('[v0] Exa web search error:', error)
       return []
     }
@@ -70,23 +74,23 @@ export const emergencyWebSearch = tool({
       return []
     }
 
-    const exa = getExaClient()
-    
-    // Focus on emergency medicine and critical care sources
-    const emergencyDomains = [
-      "who.int",
-      "cdc.gov",
-      "mohfw.gov.in",
-      "icmr.gov.in", 
-      "pubmed.ncbi.nlm.nih.gov",
-      "emra.org", // Emergency Medicine Residents Association
-      "acep.org", // American College of Emergency Physicians
-      "rcuk.ac.uk", // Resuscitation Council UK
-      "bmj.com",
-      "nejm.org"
-    ]
-
     try {
+      const exa = getExaClient()
+      
+      // Focus on emergency medicine and critical care sources
+      const emergencyDomains = [
+        "who.int",
+        "cdc.gov",
+        "mohfw.gov.in",
+        "icmr.gov.in", 
+        "pubmed.ncbi.nlm.nih.gov",
+        "emra.org", // Emergency Medicine Residents Association
+        "acep.org", // American College of Emergency Physicians
+        "rcuk.ac.uk", // Resuscitation Council UK
+        "bmj.com",
+        "nejm.org"
+      ]
+
       console.log('[v0] Executing emergency web search with query:', query)
       const { results } = await exa.searchAndContents(query.trim(), {
         livecrawl: 'always',
@@ -105,6 +109,10 @@ export const emergencyWebSearch = tool({
         highlights: result.highlights || [],
       }))
     } catch (error) {
+      if (error instanceof Error && error.message.includes('EXA_API_KEY')) {
+        console.warn('[v0] EXA_API_KEY missing, returning empty emergency search results')
+        return []
+      }
       console.error('[v0] Emergency web search error:', error)
       return []
     }

@@ -1,6 +1,7 @@
 import { generateText, stepCountIs } from "ai"
 import { createClient } from "@/lib/supabase/server"
 import { medicalWebSearch } from "@/lib/web-search-tool"
+import { getModel } from "@/lib/ai-provider"
 
 export const maxDuration = 30
 
@@ -221,7 +222,7 @@ ${conversationHistory}`
     console.log("About to call AI model with full prompt:", fullPrompt)
     
           const { text, toolCalls, toolResults } = await generateText({
-            model: "xai/grok-4-fast-reasoning",
+            model: getModel("xai/grok-4-fast-reasoning"),
             prompt: `${fullPrompt}
 
 IMPORTANT: Always use the web search tool to find the most up-to-date information from trusted medical sources. Include proper citations with links in your response.`,

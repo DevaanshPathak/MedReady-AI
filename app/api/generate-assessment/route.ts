@@ -1,6 +1,7 @@
 import { generateObject } from "ai"
 import { z } from "zod"
 import { createClient } from "@/lib/supabase/server"
+import { getModel } from "@/lib/ai-provider"
 
 export const maxDuration = 30
 
@@ -128,7 +129,7 @@ export async function POST(req: Request) {
     let object
     try {
       const result = await generateObject({
-        model: "xai/grok-4-fast-reasoning",
+        model: getModel("xai/grok-4-fast-reasoning"),
         schema: assessmentSchema,
         prompt: `Generate a comprehensive assessment for healthcare workers on: ${module.title}
 

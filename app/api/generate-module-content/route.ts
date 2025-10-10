@@ -3,6 +3,7 @@ import { z } from "zod"
 import { createClient } from "@/lib/supabase/server"
 import { redis } from "@/lib/redis"
 import { medicalWebSearch } from "@/lib/web-search-tool"
+import { getModel } from "@/lib/ai-provider"
 
 export const maxDuration = 90
 
@@ -62,7 +63,7 @@ export async function POST(req: Request) {
 
     // Generate complete chapter content with web search for current protocols
     const { object, toolCalls, toolResults } = await generateObject({
-      model: "xai/grok-4-fast-reasoning",
+      model: getModel("xai/grok-4-fast-reasoning"),
       schema: moduleContentSchema,
       prompt: `Generate a COMPLETE, comprehensive learning module for healthcare workers in rural India.
 

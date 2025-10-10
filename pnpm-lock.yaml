@@ -11,6 +11,9 @@ importers:
       '@ai-sdk/react':
         specifier: ^2.0.60
         version: 2.0.60(react@19.2.0)(zod@4.1.12)
+      '@ai-sdk/xai':
+        specifier: ^2.0.25
+        version: 2.0.25(zod@4.1.12)
       '@hookform/resolvers':
         specifier: latest
         version: 5.2.2(react-hook-form@7.64.0(react@19.2.0))
@@ -249,8 +252,20 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
+  '@ai-sdk/openai-compatible@1.0.21':
+    resolution: {integrity: sha512-8ea/ltVwcsbs/m2tlJwAzGML2BGdauTEarSA3lSktAN3fQMtZhqFHCoUJ02cPiUW+tooPj9EPJr8ScwYiogVBQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
   '@ai-sdk/provider-utils@3.0.10':
     resolution: {integrity: sha512-T1gZ76gEIwffep6MWI0QNy9jgoybUHE7TRaHB5k54K8mF91ciGFlbtCGxDYhMH3nCRergKwYFIDeFF0hJSIQHQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
+  '@ai-sdk/provider-utils@3.0.12':
+    resolution: {integrity: sha512-ZtbdvYxdMoria+2SlNarEk6Hlgyf+zzcznlD55EAl+7VZvJaSg2sqPvwArY7L6TfDEDJsnCq0fdhBSkYo0Xqdg==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -268,6 +283,12 @@ packages:
     peerDependenciesMeta:
       zod:
         optional: true
+
+  '@ai-sdk/xai@2.0.25':
+    resolution: {integrity: sha512-aoWQowUw7nMzx1oaYBOBWcs3MBX//MH1eZhm3LwSGujLmQif3alJdLMsMDhGc3dgH+ii/5f2zeR0E6saMO0iJg==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
 
   '@alloc/quick-lru@5.2.0':
     resolution: {integrity: sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==}
@@ -3860,7 +3881,20 @@ snapshots:
       '@vercel/oidc': 3.0.1
       zod: 4.1.12
 
+  '@ai-sdk/openai-compatible@1.0.21(zod@4.1.12)':
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.12(zod@4.1.12)
+      zod: 4.1.12
+
   '@ai-sdk/provider-utils@3.0.10(zod@4.1.12)':
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@standard-schema/spec': 1.0.0
+      eventsource-parser: 3.0.6
+      zod: 4.1.12
+
+  '@ai-sdk/provider-utils@3.0.12(zod@4.1.12)':
     dependencies:
       '@ai-sdk/provider': 2.0.0
       '@standard-schema/spec': 1.0.0
@@ -3879,6 +3913,13 @@ snapshots:
       swr: 2.3.6(react@19.2.0)
       throttleit: 2.1.0
     optionalDependencies:
+      zod: 4.1.12
+
+  '@ai-sdk/xai@2.0.25(zod@4.1.12)':
+    dependencies:
+      '@ai-sdk/openai-compatible': 1.0.21(zod@4.1.12)
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.12(zod@4.1.12)
       zod: 4.1.12
 
   '@alloc/quick-lru@5.2.0': {}

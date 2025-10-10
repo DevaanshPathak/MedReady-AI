@@ -1,6 +1,7 @@
 import { generateText, stepCountIs } from "ai"
 import { createClient } from "@/lib/supabase/server"
 import { medicalWebSearch } from "@/lib/web-search-tool"
+import { getModel } from "@/lib/ai-provider"
 
 export const maxDuration = 30
 
@@ -234,7 +235,7 @@ You must ALWAYS:
     console.log("Context prompt:", contextPrompt)
     
           const { text, toolCalls, toolResults } = await generateText({
-            model: "xai/grok-4-fast-reasoning",
+            model: getModel("xai/grok-4-fast-reasoning"),
             prompt: `${contextPrompt}
 
 User Question: ${prompt}

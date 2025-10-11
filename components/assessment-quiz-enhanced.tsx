@@ -366,6 +366,34 @@ export function AssessmentQuizEnhanced({ assessment, userId, moduleId }: Assessm
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ moduleId: moduleId }),
         })
+
+        // Award points based on score
+        const pointsEarned = Math.round((finalScore / 100) * 50) // Up to 50 points
+        await fetch("/api/gamification", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "award_points",
+            points: pointsEarned,
+            reason: `Completed assessment with ${finalScore}% score`,
+          }),
+        })
+
+        // Update study streak
+        await fetch("/api/streaks", {
+          method: "POST",
+        })
+      } else {
+        // Award participation points even if failed
+        await fetch("/api/gamification", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "award_points",
+            points: 10,
+            reason: "Completed assessment (practice)",
+          }),
+        })
       }
     } catch (error) {
       console.error("Error saving assessment result:", error)

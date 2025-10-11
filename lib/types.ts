@@ -165,3 +165,87 @@ export interface QuizSession {
   created_at: string
   updated_at: string
 }
+
+export interface StudyStreak {
+  id: string
+  user_id: string
+  current_streak: number
+  longest_streak: number
+  last_activity_date?: string
+  total_study_days: number
+  created_at: string
+  updated_at: string
+}
+
+export interface DailyActivity {
+  id: string
+  user_id: string
+  activity_date: string
+  activities_completed: number
+  time_spent_minutes: number
+  points_earned: number
+  created_at: string
+}
+
+export interface WeakArea {
+  id: string
+  user_id: string
+  category: string
+  topic: string
+  attempts: number
+  correct_answers: number
+  accuracy_percentage: number
+  last_attempt_at?: string
+  priority: "low" | "medium" | "high"
+  created_at: string
+  updated_at: string
+}
+
+export interface Recommendation {
+  id: string
+  user_id: string
+  recommendation_type: "weak_area" | "next_topic" | "review" | "new_skill"
+  title: string
+  description?: string
+  module_id?: string
+  priority: number
+  reason?: string
+  is_completed: boolean
+  expires_at?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface Achievement {
+  id: string
+  code: string
+  name: string
+  description?: string
+  icon?: string
+  category?: string
+  points: number
+  requirement_type?: string
+  requirement_value?: number
+  created_at: string
+}
+
+export interface UserAchievement {
+  id: string
+  user_id: string
+  achievement_id: string
+  earned_at: string
+  achievements?: Achievement
+}
+
+export interface UserGamification {
+  id: string
+  user_id: string
+  total_points: number
+  level: number
+  experience_points: number
+  next_level_points: number
+  badges_earned: number
+  rank: string
+  created_at: string
+  updated_at: string
+}

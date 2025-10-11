@@ -4,6 +4,10 @@ import { DashboardNav } from "@/components/dashboard-nav"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Reveal } from "@/components/reveal"
+import { WeakAreasCard } from "@/components/weak-areas-card"
+import { RecommendationsCard } from "@/components/recommendations-card"
+import { StudyStreakCard } from "@/components/study-streak-card"
+import { GamificationCard } from "@/components/gamification-card"
 import Link from "next/link"
 
 export default async function DashboardPage() {
@@ -140,8 +144,18 @@ export default async function DashboardPage() {
           </div>
         )}
 
+        {/* Gamification and Streaks Row */}
+        <div className="grid gap-6 md:grid-cols-2 mb-8">
+          <Reveal delay="none">
+            <StudyStreakCard />
+          </Reveal>
+          <Reveal delay="xs">
+            <GamificationCard />
+          </Reveal>
+        </div>
+
+        {/* Quick Stats */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {/* Quick Stats */}
           <Reveal delay="none">
             <Card>
             <CardHeader>
@@ -192,6 +206,16 @@ export default async function DashboardPage() {
               </p>
             </CardContent>
           </Card>
+          </Reveal>
+        </div>
+
+        {/* Weak Areas and Recommendations Row */}
+        <div className="grid gap-6 md:grid-cols-2 mt-8">
+          <Reveal delay="md">
+            <WeakAreasCard />
+          </Reveal>
+          <Reveal delay="md">
+            <RecommendationsCard />
           </Reveal>
         </div>
 

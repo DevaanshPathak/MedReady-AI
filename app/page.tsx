@@ -63,10 +63,9 @@ type WorkflowStep = {
   impact: string
 }
 
-type Testimonial = {
-  quote: string
-  name: string
+type PlatformBenefit = {
   title: string
+  description: string
 }
 
 const heroHighlights: Highlight[] = [
@@ -89,23 +88,23 @@ const heroHighlights: Highlight[] = [
 
 const heroSnapshot: Snapshot[] = [
   {
-    title: "Maternal health protocols refreshed",
-    value: "4 pathways",
-    trend: "Synced 12 minutes ago",
+    title: "AI-Powered Learning Paths",
+    value: "Adaptive",
+    trend: "Personalized for each user",
     icon: Sparkles,
     accent: "text-primary",
   },
   {
-    title: "Rural clinics on-track",
-    value: "87 sites",
-    trend: "Coverage across 18 districts",
+    title: "Rural Healthcare Focus",
+    value: "Multi-district",
+    trend: "Scalable deployment support",
     icon: MapPinned,
     accent: "text-secondary",
   },
   {
-    title: "Emergency drills scheduled",
-    value: "24 sessions",
-    trend: "Next 30 days",
+    title: "Emergency Preparedness",
+    value: "24/7 Ready",
+    trend: "Real-time orchestration",
     icon: RadioReceiver,
     accent: "text-accent",
   },
@@ -113,19 +112,19 @@ const heroSnapshot: Snapshot[] = [
 
 const metrics: Metric[] = [
   {
-    value: "18k+",
-    label: "Learning modules completed",
-    detail: "Tracked across 9 local languages",
+    value: "Real-time",
+    label: "Learning analytics and insights",
+    detail: "Track progress across all modules",
   },
   {
-    value: "92%",
-    label: "Average post-assessment uplift",
-    detail: "Measured after 30 days of practice",
+    value: "AI-Driven",
+    label: "Personalized recommendations",
+    detail: "Adaptive learning paths for every role",
   },
   {
-    value: "120+",
-    label: "District deployments supported",
-    detail: "Partnerships with state health missions",
+    value: "Scalable",
+    label: "District-wide deployment support",
+    detail: "Built for public health scale",
   },
 ]
 
@@ -219,27 +218,15 @@ const workflowSteps: WorkflowStep[] = [
   },
 ]
 
-const testimonials: Testimonial[] = [
+const platformBenefits = [
   {
-    quote:
-      "Within eight weeks we increased skilled birth attendance coverage by 27% because every ANM knew exactly which protocol to refresh each morning.",
-    name: "Dr. Meera Kulkarni",
-    title: "Chief Medical Officer, Gadchiroli District Hospital",
+    title: "Evidence-Based Training",
+    description: "Modules aligned with national health protocols and clinical best practices for immediate real-world application.",
   },
   {
-    quote:
-      "MedReady AI helped us orchestrate cross-district emergency drills without adding headcount. The command dashboard has become our single source of truth.",
-    name: "Raghav Singh",
-    title: "State Program Manager, National Health Mission Uttar Pradesh",
+    title: "Offline-First Design",
+    description: "Works seamlessly in low-connectivity rural areas with automatic sync when connection is available.",
   },
-]
-
-const partnerLogos: string[] = [
-  "WHO India",
-  "Maharashtra Health Mission",
-  "Indian Nursing Council",
-  "UNICEF Health Alliance",
-  "Tata Trusts Health",
 ]
 
 export default function HomePage() {
@@ -260,7 +247,7 @@ export default function HomePage() {
             <Link href="#workflow" className="transition-colors hover:text-foreground">
               How it works
             </Link>
-            <Link href="#testimonials" className="transition-colors hover:text-foreground">
+            <Link href="#impact" className="transition-colors hover:text-foreground">
               Impact
             </Link>
           </Reveal>
@@ -339,9 +326,9 @@ export default function HomePage() {
                   ))}
                 </div>
                 <div className="rounded-2xl border border-dashed border-primary/40 bg-primary/10 p-5 text-primary">
-                  <p className="text-sm font-semibold uppercase tracking-wide">Deployment insight</p>
+                  <p className="text-sm font-semibold uppercase tracking-wide">Smart Deployment</p>
                   <p className="mt-2 text-sm text-primary/80">
-                    312 workers certified for advanced neonatal care are available for redeployment this month.
+                    AI-powered matching ensures the right healthcare workers reach communities that need them most.
                   </p>
                 </div>
               </Reveal>
@@ -358,10 +345,13 @@ export default function HomePage() {
             </Reveal>
           </div>
 
-          <Reveal as="div" className="mt-14 landing-partners" delay="lg">
-            {partnerLogos.map((partner) => (
-              <span key={partner}>{partner}</span>
-            ))}
+          <Reveal as="div" className="mt-14 text-center" delay="lg">
+            <p className="text-sm font-medium text-muted-foreground">
+              Built for MumbaiHacks 2025 - Healthcare Innovation Track
+            </p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              A comprehensive AI-powered platform transforming healthcare workforce readiness across India
+            </p>
           </Reveal>
         </section>
 
@@ -456,36 +446,36 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="testimonials" className="landing-section py-20 md:py-28">
+        <section id="impact" className="landing-section py-20 md:py-28">
           <div className="grid gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
             <div>
               <Reveal as="h2" className="text-balance text-3xl font-bold tracking-tight sm:text-4xl" variant="down">
-                Trusted by public health leaders across India
+                Built for public health scale and impact
               </Reveal>
               <Reveal as="p" className="mt-4 text-pretty leading-relaxed text-muted-foreground" delay="xs">
                 From tier-3 cities to remote primary health centers, MedReady AI equips teams to respond faster, learn continuously, and document every impact metric.
               </Reveal>
               <Reveal as="div" className="mt-8 grid gap-4" delay="sm">
                 <div className="rounded-xl border border-border bg-background/80 p-5 text-sm text-muted-foreground">
-                  <p className="font-medium text-foreground">Rapid onboarding</p>
-                  <p className="mt-1">Launch district-wide pilots in under 10 days with ready curricula and deployment playbooks.</p>
+                  <p className="font-medium text-foreground">Rapid deployment</p>
+                  <p className="mt-1">Launch district-wide implementations with ready curricula and deployment playbooks.</p>
                 </div>
                 <div className="rounded-xl border border-border bg-background/80 p-5 text-sm text-muted-foreground">
-                  <p className="font-medium text-foreground">Continuous compliance</p>
+                  <p className="font-medium text-foreground">Compliance-ready</p>
                   <p className="mt-1">Automated audit logs align with state and national health quality frameworks.</p>
                 </div>
               </Reveal>
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">
-              {testimonials.map(({ quote, name, title }) => (
-                <Reveal key={name} variant="up" delay="sm">
-                  <figure className="landing-testimonial">
-                    <blockquote className="text-base leading-relaxed text-foreground">“{quote}”</blockquote>
-                    <cite>
-                      {name} · {title}
-                    </cite>
-                  </figure>
+              {platformBenefits.map(({ title, description }) => (
+                <Reveal key={title} variant="up" delay="sm">
+                  <Card className="h-full border border-border/80 bg-card/95 shadow-lg">
+                    <CardHeader>
+                      <CardTitle className="text-base">{title}</CardTitle>
+                      <CardDescription className="text-sm">{description}</CardDescription>
+                    </CardHeader>
+                  </Card>
                 </Reveal>
               ))}
             </div>
@@ -499,14 +489,14 @@ export default function HomePage() {
                 Ready to transform healthcare training?
               </Reveal>
               <Reveal as="p" className="mt-4 text-pretty leading-relaxed text-muted-foreground" delay="xs">
-                Join thousands of healthcare professionals improving their skills and making a measurable difference in rural India.
+                Join healthcare professionals improving their skills and making a measurable difference in rural India.
               </Reveal>
               <Reveal as="div" className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center" delay="sm">
                 <Button asChild size="lg" className="text-base">
                   <Link href="/auth/sign-up">Create free account</Link>
                 </Button>
                 <Button asChild size="lg" variant="outline" className="text-base">
-                  <Link href="/auth/login">Book a live demo</Link>
+                  <Link href="/auth/login">Sign in</Link>
                 </Button>
               </Reveal>
             </div>
@@ -525,7 +515,7 @@ export default function HomePage() {
               <Link href="#workflow" className="transition-colors hover:text-foreground">
                 Workflow
               </Link>
-              <Link href="#testimonials" className="transition-colors hover:text-foreground">
+              <Link href="#impact" className="transition-colors hover:text-foreground">
                 Impact
               </Link>
               <Link href="mailto:hello@medready.ai" className="transition-colors hover:text-foreground">

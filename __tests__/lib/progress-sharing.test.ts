@@ -1,17 +1,36 @@
 import { describe, it, expect, beforeEach } from '@jest/globals'
 
-// Mock Supabase client
-const mockSupabase = {
-  from: jest.fn(() => ({
+// Create a chainable mock factory
+const createChainableMock = () => {
+  const chainable: any = {
     select: jest.fn().mockReturnThis(),
     insert: jest.fn().mockReturnThis(),
     update: jest.fn().mockReturnThis(),
+    delete: jest.fn().mockReturnThis(),
     eq: jest.fn().mockReturnThis(),
     or: jest.fn().mockReturnThis(),
     order: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),
-    single: jest.fn(),
-  })),
+    single: jest.fn().mockResolvedValue({ data: null, error: null }),
+    then: jest.fn((resolve) => {
+      resolve({ data: [], error: null })
+      return Promise.resolve({ data: [], error: null })
+    }),
+  }
+  
+  // Make sure all methods return the same chainable object
+  Object.keys(chainable).forEach(key => {
+    if (typeof chainable[key] === 'function' && key !== 'single' && key !== 'then') {
+      chainable[key].mockReturnValue(chainable)
+    }
+  })
+  
+  return chainable
+}
+
+// Mock Supabase client
+const mockSupabase = {
+  from: jest.fn(() => createChainableMock()),
 }
 
 jest.mock('@/lib/supabase/client', () => ({

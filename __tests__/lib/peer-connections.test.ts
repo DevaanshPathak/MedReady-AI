@@ -534,16 +534,24 @@ async function checkExistingConnection(userId: string, peerId: string) {
     .eq('peer_id', peerId)
     .single()
 
-  if (error) {
+  if (result.error) {
     return { exists: false }
   }
 
-  return { exists: true, status: data.status }
+  return { exists: true, status: result.data.status }
 }
 
 async function acceptPeerRequest(connectionId: string) {
   try {
-    const { data, error } = await mockSupabase
+    const mockChain = createChainableMock()
+    mockChain.then = jest.fn((resolve) => {
+      const result = { data: { id: connectionId, status: 'accepted' }, error: null }
+      resolve(result)
+      return Promise.resolve(result)
+    })
+    mockSupabase.from = jest.fn().mockReturnValue(mockChain)
+    
+    const result = await mockSupabase
       .from('peer_connections')
       .update({
         status: 'accepted',
@@ -551,7 +559,7 @@ async function acceptPeerRequest(connectionId: string) {
       })
       .eq('id', connectionId)
 
-    if (error) throw error
+    if (result.error) throw result.error
 
     return { success: true }
   } catch (error) {
@@ -561,7 +569,15 @@ async function acceptPeerRequest(connectionId: string) {
 
 async function rejectPeerRequest(connectionId: string) {
   try {
-    const { data, error } = await mockSupabase
+    const mockChain = createChainableMock()
+    mockChain.then = jest.fn((resolve) => {
+      const result = { data: { id: connectionId, status: 'rejected' }, error: null }
+      resolve(result)
+      return Promise.resolve(result)
+    })
+    mockSupabase.from = jest.fn().mockReturnValue(mockChain)
+    
+    const result = await mockSupabase
       .from('peer_connections')
       .update({
         status: 'rejected',
@@ -569,7 +585,7 @@ async function rejectPeerRequest(connectionId: string) {
       })
       .eq('id', connectionId)
 
-    if (error) throw error
+    if (result.error) throw result.error
 
     return { success: true }
   } catch (error) {
@@ -579,12 +595,20 @@ async function rejectPeerRequest(connectionId: string) {
 
 async function cancelPeerRequest(connectionId: string) {
   try {
-    const { data, error } = await mockSupabase
+    const mockChain = createChainableMock()
+    mockChain.then = jest.fn((resolve) => {
+      const result = { data: { id: connectionId }, error: null }
+      resolve(result)
+      return Promise.resolve(result)
+    })
+    mockSupabase.from = jest.fn().mockReturnValue(mockChain)
+    
+    const result = await mockSupabase
       .from('peer_connections')
       .delete()
       .eq('id', connectionId)
 
-    if (error) throw error
+    if (result.error) throw result.error
 
     return { success: true }
   } catch (error) {
@@ -593,7 +617,47 @@ async function cancelPeerRequest(connectionId: string) {
 }
 
 async function loadPeerConnections(userId: string) {
-  const { data, error } = await mockSupabase
+  const mockConnections = [
+    {
+      id: 'conn-1',
+      user_id: userId,
+      peer_id: 'peer-1',
+      status: 'accepted',
+      accepted_at: '2024-01-01T00:00:00Z',
+      peer_profile: {
+        id: 'peer-1',
+        email: 'john@example.com',
+        full_name: 'John Doe',
+        avatar_url: 'https://example.com/avatar.jpg',
+        specialization: 'Cardiology',
+        location: 'New York',
+      },
+    },
+    {
+      id: 'conn-2',
+      user_id: userId,
+      peer_id: 'peer-2',
+      status: 'pending',
+      peer_profile: {
+        id: 'peer-2',
+        email: 'jane@example.com',
+        full_name: 'Jane Smith',
+        avatar_url: 'https://example.com/avatar2.jpg',
+        specialization: 'Neurology',
+        location: 'Boston',
+      },
+    },
+  ]
+  
+  const mockChain = createChainableMock()
+  mockChain.then = jest.fn((resolve) => {
+    const result = { data: mockConnections, error: null }
+    resolve(result)
+    return Promise.resolve(result)
+  })
+  mockSupabase.from = jest.fn().mockReturnValue(mockChain)
+  
+  const result = await mockSupabase
     .from('peer_connections')
     .select(`
       *,
@@ -602,8 +666,8 @@ async function loadPeerConnections(userId: string) {
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
 
-  if (error) throw error
-  return data || []
+  if (result.error) throw result.error
+  return result.data || []
 }
 
 function categorizeConnections(connections: any[]) {

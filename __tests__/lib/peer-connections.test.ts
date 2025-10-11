@@ -1,16 +1,36 @@
 import { describe, it, expect, beforeEach } from '@jest/globals'
 
-// Mock Supabase client
-const mockSupabase = {
-  from: jest.fn(() => ({
+// Create a chainable mock factory
+const createChainableMock = () => {
+  const chainable: any = {
     select: jest.fn().mockReturnThis(),
     insert: jest.fn().mockReturnThis(),
     update: jest.fn().mockReturnThis(),
     delete: jest.fn().mockReturnThis(),
     eq: jest.fn().mockReturnThis(),
+    or: jest.fn().mockReturnThis(),
     order: jest.fn().mockReturnThis(),
-    single: jest.fn(),
-  })),
+    limit: jest.fn().mockReturnThis(),
+    single: jest.fn().mockResolvedValue({ data: null, error: null }),
+    then: jest.fn((resolve) => {
+      resolve({ data: [], error: null })
+      return Promise.resolve({ data: [], error: null })
+    }),
+  }
+  
+  // Make sure all methods return the same chainable object
+  Object.keys(chainable).forEach(key => {
+    if (typeof chainable[key] === 'function' && key !== 'single' && key !== 'then') {
+      chainable[key].mockReturnValue(chainable)
+    }
+  })
+  
+  return chainable
+}
+
+// Mock Supabase client
+const mockSupabase = {
+  from: jest.fn(() => createChainableMock()),
 }
 
 jest.mock('@/lib/supabase/client', () => ({
@@ -436,35 +456,61 @@ describe('Peer Connections Feature', () => {
 
 // Helper functions for testing
 async function createPeerConnection(connectionData: any) {
-  const { data, error } = await mockSupabase
+  const mockChain = createChainableMock()
+  mockChain.then = jest.fn((resolve) => {
+    const result = { data: { id: 'connection-id', ...connectionData }, error: null }
+    resolve(result)
+    return Promise.resolve(result)
+  })
+  mockSupabase.from = jest.fn().mockReturnValue(mockChain)
+  
+  const result = await mockSupabase
     .from('peer_connections')
     .insert(connectionData)
 
-  if (error) throw error
-  return data
+  if (result.error) throw result.error
+  return result.data
 }
 
 async function sendPeerRequest(userId: string, peerEmail: string) {
   try {
+    // Mock chain for finding peer by email
+    const profileChain = createChainableMock()
+    profileChain.single = jest.fn().mockResolvedValue({
+      data: { id: 'peer-123', email: peerEmail },
+      error: null,
+    })
+    
+    // Mock chain for inserting connection
+    const insertChain = createChainableMock()
+    insertChain.then = jest.fn((resolve) => {
+      resolve({ data: { id: 'connection-123' }, error: null })
+      return Promise.resolve({ data: { id: 'connection-123' }, error: null })
+    })
+    
+    mockSupabase.from = jest.fn()
+      .mockReturnValueOnce(profileChain)
+      .mockReturnValueOnce(insertChain)
+
     // Find peer by email
-    const { data: peerData, error: peerError } = await mockSupabase
+    const peerResult = await mockSupabase
       .from('profiles')
       .select('id')
       .eq('email', peerEmail)
       .single()
 
-    if (peerError || !peerData) {
+    if (peerResult.error || !peerResult.data) {
       return { success: false, error: 'User not found' }
     }
 
     // Create connection request
-    const { error } = await mockSupabase.from('peer_connections').insert({
+    const insertResult = await mockSupabase.from('peer_connections').insert({
       user_id: userId,
-      peer_id: peerData.id,
+      peer_id: peerResult.data.id,
       status: 'pending',
     })
 
-    if (error) throw error
+    if (insertResult.error) throw insertResult.error
 
     return { success: true }
   } catch (error) {
@@ -473,7 +519,15 @@ async function sendPeerRequest(userId: string, peerEmail: string) {
 }
 
 async function checkExistingConnection(userId: string, peerId: string) {
-  const { data, error } = await mockSupabase
+  const mockChain = createChainableMock()
+  mockChain.then = jest.fn((resolve) => {
+    const result = { data: [], error: null }
+    resolve(result)
+    return Promise.resolve(result)
+  })
+  mockSupabase.from = jest.fn().mockReturnValue(mockChain)
+  
+  const result = await mockSupabase
     .from('peer_connections')
     .select('id, status')
     .eq('user_id', userId)

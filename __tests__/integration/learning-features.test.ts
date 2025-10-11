@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach } from '@jest/globals'
 
-// Mock Supabase client
-const mockSupabase = {
-  from: jest.fn(() => ({
+// Create a chainable mock factory
+const createChainableMock = () => {
+  const chainable: any = {
     select: jest.fn().mockReturnThis(),
     insert: jest.fn().mockReturnThis(),
     update: jest.fn().mockReturnThis(),
@@ -12,8 +12,26 @@ const mockSupabase = {
     or: jest.fn().mockReturnThis(),
     order: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),
-    single: jest.fn(),
-  })),
+    single: jest.fn().mockResolvedValue({ data: null, error: null }),
+    then: jest.fn((resolve) => {
+      resolve({ data: [], error: null })
+      return Promise.resolve({ data: [], error: null })
+    }),
+  }
+  
+  // Make sure all methods return the same chainable object
+  Object.keys(chainable).forEach(key => {
+    if (typeof chainable[key] === 'function' && key !== 'single' && key !== 'then') {
+      chainable[key].mockReturnValue(chainable)
+    }
+  })
+  
+  return chainable
+}
+
+// Mock Supabase client
+const mockSupabase = {
+  from: jest.fn(() => createChainableMock()),
   rpc: jest.fn(),
 }
 
@@ -430,7 +448,14 @@ describe('Learning Features Integration Tests', () => {
 
 // Helper functions for integration testing
 async function startTimedQuiz(userId: string, assessmentId: string, moduleId: string) {
-  const { data, error } = await mockSupabase
+  const mockChain = createChainableMock()
+  mockChain.single = jest.fn().mockResolvedValue({
+    data: { id: 'session-123', mode: 'timed', user_id: userId },
+    error: null,
+  })
+  mockSupabase.from = jest.fn().mockReturnValue(mockChain)
+  
+  const result = await mockSupabase
     .from('quiz_sessions')
     .insert({
       user_id: userId,
@@ -442,8 +467,8 @@ async function startTimedQuiz(userId: string, assessmentId: string, moduleId: st
     .select()
     .single()
 
-  if (error) throw error
-  return data
+  if (result.error) throw result.error
+  return result.data
 }
 
 async function bookmarkQuestion(
@@ -453,7 +478,15 @@ async function bookmarkQuestion(
   questionIndex: number,
   notes: string
 ) {
-  const { data, error } = await mockSupabase
+  const mockChain = createChainableMock()
+  mockChain.then = jest.fn((resolve) => {
+    const result = { data: { id: 'bookmark-123', user_id: userId }, error: null }
+    resolve(result)
+    return Promise.resolve(result)
+  })
+  mockSupabase.from = jest.fn().mockReturnValue(mockChain)
+  
+  const result = await mockSupabase
     .from('bookmarked_questions')
     .insert({
       user_id: userId,
@@ -464,12 +497,20 @@ async function bookmarkQuestion(
       notes,
     })
 
-  if (error) throw error
-  return data
+  if (result.error) throw result.error
+  return result.data
 }
 
 async function updateQuizAnswers(sessionId: string, answers: Record<number, number>) {
-  const { data, error } = await mockSupabase
+  const mockChain = createChainableMock()
+  mockChain.then = jest.fn((resolve) => {
+    const result = { data: { id: sessionId, answers }, error: null }
+    resolve(result)
+    return Promise.resolve(result)
+  })
+  mockSupabase.from = jest.fn().mockReturnValue(mockChain)
+  
+  const result = await mockSupabase
     .from('quiz_sessions')
     .update({
       answers,
@@ -477,8 +518,8 @@ async function updateQuizAnswers(sessionId: string, answers: Record<number, numb
     })
     .eq('id', sessionId)
 
-  if (error) throw error
-  return data
+  if (result.error) throw result.error
+  return result.data
 }
 
 async function completeQuiz(
@@ -488,7 +529,15 @@ async function completeQuiz(
   score: number,
   passed: boolean
 ) {
-  const { data, error } = await mockSupabase
+  const mockChain = createChainableMock()
+  mockChain.then = jest.fn((resolve) => {
+    const result = { data: { id: 'attempt-123', user_id: userId, score, passed }, error: null }
+    resolve(result)
+    return Promise.resolve(result)
+  })
+  mockSupabase.from = jest.fn().mockReturnValue(mockChain)
+  
+  const result = await mockSupabase
     .from('assessment_attempts')
     .insert({
       user_id: userId,
@@ -498,12 +547,20 @@ async function completeQuiz(
       passed,
     })
 
-  if (error) throw error
-  return data
+  if (result.error) throw result.error
+  return result.data
 }
 
 async function shareProgress(userId: string, moduleId: string, message: string) {
-  const { data, error } = await mockSupabase
+  const mockChain = createChainableMock()
+  mockChain.then = jest.fn((resolve) => {
+    const result = { data: { id: 'share-123', user_id: userId }, error: null }
+    resolve(result)
+    return Promise.resolve(result)
+  })
+  mockSupabase.from = jest.fn().mockReturnValue(mockChain)
+  
+  const result = await mockSupabase
     .from('progress_shares')
     .insert({
       user_id: userId,
@@ -512,12 +569,20 @@ async function shareProgress(userId: string, moduleId: string, message: string) 
       message,
     })
 
-  if (error) throw error
-  return data
+  if (result.error) throw result.error
+  return result.data
 }
 
 async function sendPeerRequest(userId: string, peerEmail: string) {
-  const { data, error } = await mockSupabase
+  const mockChain = createChainableMock()
+  mockChain.then = jest.fn((resolve) => {
+    const result = { data: { id: 'request-123', user_id: userId, status: 'pending' }, error: null }
+    resolve(result)
+    return Promise.resolve(result)
+  })
+  mockSupabase.from = jest.fn().mockReturnValue(mockChain)
+  
+  const result = await mockSupabase
     .from('peer_connections')
     .insert({
       user_id: userId,
@@ -525,20 +590,28 @@ async function sendPeerRequest(userId: string, peerEmail: string) {
       status: 'pending',
     })
 
-  if (error) throw error
-  return data
+  if (result.error) throw result.error
+  return result.data
 }
 
 async function loadSpacedRepetitionDue(userId: string, moduleId: string) {
-  const { data, error } = await mockSupabase
+  const mockChain = createChainableMock()
+  mockChain.then = jest.fn((resolve) => {
+    const result = { data: [{ question_id: 'hash1' }, { question_id: 'hash2' }], error: null }
+    resolve(result)
+    return Promise.resolve(result)
+  })
+  mockSupabase.from = jest.fn().mockReturnValue(mockChain)
+  
+  const result = await mockSupabase
     .from('spaced_repetition')
     .select('question_id')
     .eq('user_id', userId)
     .eq('module_id', moduleId)
     .lte('next_review_date', new Date().toISOString())
 
-  if (error) return []
-  return data || []
+  if (result.error) return []
+  return result.data || []
 }
 
 async function updateSpacedRepetitionBatch(
@@ -560,7 +633,15 @@ async function updateSpacedRepetitionBatch(
 }
 
 async function loadProgressFeed(userId: string) {
-  const { data, error } = await mockSupabase
+  const mockChain = createChainableMock()
+  mockChain.then = jest.fn((resolve) => {
+    const result = { data: [{ id: 'share-1', user_id: 'user-123', message: 'Test progress' }], error: null }
+    resolve(result)
+    return Promise.resolve(result)
+  })
+  mockSupabase.from = jest.fn().mockReturnValue(mockChain)
+  
+  const result = await mockSupabase
     .from('progress_shares')
     .select(`
       *,
@@ -571,12 +652,20 @@ async function loadProgressFeed(userId: string) {
     .order('created_at', { ascending: false })
     .limit(50)
 
-  if (error) return []
-  return data || []
+  if (result.error) return []
+  return result.data || []
 }
 
 async function loadPendingRequests(userId: string) {
-  const { data, error } = await mockSupabase
+  const mockChain = createChainableMock()
+  mockChain.then = jest.fn((resolve) => {
+    const result = { data: [{ id: 'request-1', user_id: 'userA', peer_id: userId, status: 'pending' }], error: null }
+    resolve(result)
+    return Promise.resolve(result)
+  })
+  mockSupabase.from = jest.fn().mockReturnValue(mockChain)
+  
+  const result = await mockSupabase
     .from('peer_connections')
     .select(`
       *,
@@ -586,12 +675,20 @@ async function loadPendingRequests(userId: string) {
     .eq('status', 'pending')
     .order('created_at', { ascending: false })
 
-  if (error) return []
-  return data || []
+  if (result.error) return []
+  return result.data || []
 }
 
 async function acceptPeerRequest(connectionId: string) {
-  const { data, error } = await mockSupabase
+  const mockChain = createChainableMock()
+  mockChain.then = jest.fn((resolve) => {
+    const result = { data: { id: connectionId, status: 'accepted' }, error: null }
+    resolve(result)
+    return Promise.resolve(result)
+  })
+  mockSupabase.from = jest.fn().mockReturnValue(mockChain)
+  
+  const result = await mockSupabase
     .from('peer_connections')
     .update({
       status: 'accepted',
@@ -599,12 +696,20 @@ async function acceptPeerRequest(connectionId: string) {
     })
     .eq('id', connectionId)
 
-  if (error) throw error
-  return data
+  if (result.error) throw result.error
+  return result.data
 }
 
 async function loadSharedProgress(userId: string) {
-  const { data, error } = await mockSupabase
+  const mockChain = createChainableMock()
+  mockChain.then = jest.fn((resolve) => {
+    const result = { data: [], error: null }
+    resolve(result)
+    return Promise.resolve(result)
+  })
+  mockSupabase.from = jest.fn().mockReturnValue(mockChain)
+  
+  const result = await mockSupabase
     .from('progress_shares')
     .select(`
       *,
@@ -614,8 +719,8 @@ async function loadSharedProgress(userId: string) {
     .order('created_at', { ascending: false })
     .limit(50)
 
-  if (error) return []
-  return data || []
+  if (result.error) return []
+  return result.data || []
 }
 
 async function createQuizSession(
@@ -624,7 +729,14 @@ async function createQuizSession(
   moduleId: string,
   mode: string
 ) {
-  const { data, error } = await mockSupabase
+  const mockChain = createChainableMock()
+  mockChain.single = jest.fn().mockResolvedValue({
+    data: { id: 'session-123', mode, user_id: userId },
+    error: null,
+  })
+  mockSupabase.from = jest.fn().mockReturnValue(mockChain)
+  
+  const result = await mockSupabase
     .from('quiz_sessions')
     .insert({
       user_id: userId,
@@ -635,43 +747,67 @@ async function createQuizSession(
     .select()
     .single()
 
-  if (error) throw error
-  return data
+  if (result.error) throw result.error
+  return result.data
 }
 
 async function loadBookmarks(userId: string, moduleId: string) {
-  const { data, error } = await mockSupabase
+  const mockChain = createChainableMock()
+  mockChain.then = jest.fn((resolve) => {
+    const result = { data: [], error: null }
+    resolve(result)
+    return Promise.resolve(result)
+  })
+  mockSupabase.from = jest.fn().mockReturnValue(mockChain)
+  
+  const result = await mockSupabase
     .from('bookmarked_questions')
     .select('question_index, notes')
     .eq('user_id', userId)
     .eq('module_id', moduleId)
 
-  if (error) return []
-  return data || []
+  if (result.error) return []
+  return result.data || []
 }
 
 async function loadProgressShares(userId: string) {
-  const { data, error } = await mockSupabase
+  const mockChain = createChainableMock()
+  mockChain.then = jest.fn((resolve) => {
+    const result = { data: [], error: null }
+    resolve(result)
+    return Promise.resolve(result)
+  })
+  mockSupabase.from = jest.fn().mockReturnValue(mockChain)
+  
+  const result = await mockSupabase
     .from('progress_shares')
     .select('*')
     .or(`share_type.eq.public,user_id.eq.${userId}`)
     .order('created_at', { ascending: false })
     .limit(100)
 
-  if (error) return []
-  return data || []
+  if (result.error) return []
+  return result.data || []
 }
 
 async function loadProgressSharesPaginated(userId: string, pageSize: number, page: number) {
-  const { data, error } = await mockSupabase
+  const mockChain = createChainableMock()
+  mockChain.then = jest.fn((resolve) => {
+    const result = { data: [], error: null }
+    resolve(result)
+    return Promise.resolve(result)
+  })
+  mockSupabase.from = jest.fn().mockReturnValue(mockChain)
+  
+  const result = await mockSupabase
     .from('progress_shares')
     .select('*')
     .or(`share_type.eq.public,user_id.eq.${userId}`)
     .order('created_at', { ascending: false })
     .range(page * pageSize, (page + 1) * pageSize - 1)
 
-  if (error) return []
-  return data || []
+  if (result.error) return []
+  return result.data || []
 }
 
 async function updateSpacedRepetition(

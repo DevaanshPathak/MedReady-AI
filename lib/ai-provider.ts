@@ -1,5 +1,5 @@
 import { createGateway } from 'ai'
-import { anthropic } from '@ai-sdk/anthropic'
+import { anthropic as anthropicProvider } from '@ai-sdk/anthropic'
 
 /**
  * Vercel AI Gateway configuration
@@ -29,8 +29,32 @@ export function getModel(modelId: string) {
 
 /**
  * Helper to get an Anthropic Claude model directly via AI SDK provider
+ * Model IDs:
+ * - 'claude-sonnet-4-5-20250929' (default, best for agents and coding)
+ * - 'claude-sonnet-4-20250514' (good balance)
+ * - 'claude-opus-4-20250514' (most capable)
+ * 
+ * Usage: getClaude() or getClaude('claude-opus-4-20250514')
+ * 
+ * Note: Requires ANTHROPIC_API_KEY environment variable
  */
 export function getClaude(modelId: string = 'claude-sonnet-4-5-20250929') {
-  return anthropic(modelId)
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.warn('ANTHROPIC_API_KEY not configured. Claude models will not work.')
+  }
+  return anthropicProvider(modelId)
+}
+
+/**
+ * Type definitions for Anthropic provider options
+ */
+export interface AnthropicProviderOptions {
+  thinking?: {
+    type: 'enabled'
+    budgetTokens: number
+  }
+  cacheControl?: {
+    type: 'ephemeral'
+  }
 }
 

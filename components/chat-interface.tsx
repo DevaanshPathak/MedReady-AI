@@ -15,6 +15,7 @@ import { useTheme } from "next-themes"
 import { Copy, Check } from "lucide-react"
 import { MedReadyLogo } from "@/components/medready-logo"
 import { SourcesBar } from "@/components/sources-bar"
+import { useChat } from '@ai-sdk/react'
 
 interface ChatInterfaceProps {
   userId: string

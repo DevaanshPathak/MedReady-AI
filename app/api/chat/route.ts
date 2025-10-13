@@ -1,4 +1,4 @@
-import { streamText, stepCountIs, convertToModelMessages } from "ai"
+import { streamText, stepCountIs, convertToModelMessages, type UIMessage } from "ai"
 import { createClient } from "@/lib/supabase/server"
 import { medicalWebSearch } from "@/lib/web-search-tool"
 import { getClaude } from "@/lib/ai-provider"
@@ -111,22 +111,51 @@ export async function POST(req: Request) {
     const body = await req.json()
     console.log("Chat API received body:", JSON.stringify(body, null, 2))
     
-    let messages, userId, userRole, specialization, location, category
+    let messages: UIMessage[] = []
+    let userId, userRole, specialization, location, category, sessionId
+    let usePromptCache = false
+    let extendedThinking = false
 
     // Handle different request formats
     if (body.messages && Array.isArray(body.messages)) {
-      // useChat format
-      messages = body.messages
+      // useChat format - convert to UIMessage format if needed
+      messages = body.messages.map((msg: any, index: number) => {
+        // If message already has parts array, use it as-is
+        if (msg.parts && Array.isArray(msg.parts)) {
+          return {
+            id: msg.id || `msg-${Date.now()}-${index}`,
+            role: msg.role,
+            parts: msg.parts
+          }
+        }
+        // Convert old format (content string) to new format (parts array)
+        if (typeof msg.content === 'string') {
+          return {
+            id: msg.id || `msg-${Date.now()}-${index}`,
+            role: msg.role,
+            parts: [{ type: 'text', text: msg.content }]
+          }
+        }
+        // Fallback: try to handle as-is but ensure id exists
+        return {
+          id: msg.id || `msg-${Date.now()}-${index}`,
+          role: msg.role,
+          parts: msg.parts || [{ type: 'text', text: String(msg.content || '') }]
+        }
+      })
       
-      // Try to get userId from body first, then from last message data
-      if (body.userId) {
-        userId = body.userId
-        userRole = body.userRole
-        specialization = body.specialization
-        location = body.location
-        category = body.category
-      } else {
-        // Extract from last message data
+      // Extract configuration
+      userId = body.userId
+      userRole = body.userRole
+      specialization = body.specialization
+      location = body.location
+      category = body.category
+      sessionId = body.sessionId
+      usePromptCache = body.usePromptCache ?? false
+      extendedThinking = body.extendedThinking ?? false
+      
+      // Also try to extract from last message data
+      if (!userId) {
         const lastMessage = body.messages[body.messages.length - 1]
         if (lastMessage?.data) {
           userId = lastMessage.data.userId
@@ -134,42 +163,34 @@ export async function POST(req: Request) {
           specialization = lastMessage.data.specialization
           location = lastMessage.data.location
           category = lastMessage.data.category
+          sessionId = lastMessage.data.sessionId
           console.log("Extracted from message data:", { userId, userRole, specialization, location, category })
         }
       }
     } else if (body.prompt) {
-      // useCompletion format
+      // useCompletion format - convert to messages
       messages = [
         {
+          id: `msg-${Date.now()}`,
           role: "user",
-          content: body.prompt,
+          parts: [{ type: 'text', text: body.prompt }]
         }
-      ]
+      ] as UIMessage[]
       userId = body.userId
       userRole = body.userRole
       specialization = body.specialization
       location = body.location
       category = body.category
+      sessionId = body.sessionId
     } else {
-      // Fallback: try to extract from message data
-      const lastMessage = body.messages?.[body.messages.length - 1]
-      if (lastMessage?.data) {
-        messages = body.messages
-        userId = lastMessage.data.userId
-        userRole = lastMessage.data.userRole
-        specialization = lastMessage.data.specialization
-        location = lastMessage.data.location
-        category = lastMessage.data.category
-        console.log("Extracted from message data:", { userId, userRole, specialization, location, category })
-      } else {
-        console.log("No message data found, using fallback values")
-        messages = body.messages || []
-        userId = body.userId
-        userRole = body.userRole
-        specialization = body.specialization
-        location = body.location
-        category = body.category
-      }
+      // Fallback
+      messages = body.messages || []
+      userId = body.userId
+      userRole = body.userRole
+      specialization = body.specialization
+      location = body.location
+      category = body.category
+      sessionId = body.sessionId
     }
 
     const supabase = await createClient()
@@ -186,10 +207,31 @@ export async function POST(req: Request) {
       return new Response("Unauthorized", { status: 401 })
     }
 
-    // Build context-aware system prompt
-    const systemPrompt = systemPrompts[category as keyof typeof systemPrompts] || systemPrompts.general
+    // Validate that we have messages
+    if (!messages || messages.length === 0) {
+      console.log("No messages provided in request")
+      return new Response("Bad Request: No messages provided", { status: 400 })
+    }
 
-    const contextPrompt = `${systemPrompt}
+    // Filter out messages with no text content (empty messages cause API errors)
+    messages = messages.filter((msg) => {
+      const hasTextContent = msg.parts?.some((part: any) => 
+        part.type === 'text' && part.text && part.text.trim().length > 0
+      )
+      return hasTextContent
+    })
+
+    if (messages.length === 0) {
+      console.log("No valid messages with text content")
+      return new Response("Bad Request: No valid messages with text content", { status: 400 })
+    }
+
+    console.log("Filtered messages count:", messages.length)
+
+    // Build context-aware system prompt
+    const basePrompt = systemPrompts[category as keyof typeof systemPrompts] || systemPrompts.general
+
+    const contextPrompt = `${basePrompt}
 
 User Context:
 - Role: ${userRole || "Healthcare Worker"}
@@ -212,75 +254,91 @@ Format responses clearly with:
 - Warning signs to watch for
 - When to seek additional help`
 
-          // Convert messages to a single prompt for generateText
-          const safeMessages = Array.isArray(messages) ? messages : []
-          const conversationHistory = safeMessages.map((msg: any) => `${msg.role}: ${msg.content}`).join('\n\n')
-    const fullPrompt = `${contextPrompt}
-
-Conversation History:
-${conversationHistory}`
-
-    console.log("About to call AI model with full prompt:", fullPrompt)
+    console.log("About to call streamText with Claude model")
+    console.log("Messages count:", messages.length)
+    console.log("First message:", JSON.stringify(messages[0], null, 2))
+    if (messages.length > 1) {
+      console.log("Second message:", JSON.stringify(messages[1], null, 2))
+    }
     
-          const uiMessages = Array.isArray(messages) && messages.length > 0
-            ? messages
-            : [{ role: "user", content: body.prompt ?? "" }]
-
-          const result = await streamText({
-            model: getClaude('claude-sonnet-4-5-20250929'),
-            system: contextPrompt,
-            messages: convertToModelMessages(uiMessages),
-            tools: { medicalWebSearch },
-            temperature: 0.2,
-            stopWhen: stepCountIs(5),
-          })
-
-          // Immediately return SSE response compatible with AI SDK UI message stream protocol
-          return result.toUIMessageStreamResponse()
-
-    // Unreachable after streaming return; retain DB save path only if needed for non-streaming fallback
-    /* Save assistant message to database
-    try {
-      let sessionId = body.sessionId
-      
-      // If no sessionId provided, get or create the most recent session
-      if (!sessionId) {
-        const { data: session } = await supabase
-          .from("chat_sessions")
-          .select("id")
-          .eq("user_id", userId)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .single()
-
-        sessionId = session?.id
-        if (!sessionId) {
-          const { data: newSession } = await supabase
-            .from("chat_sessions")
-            .insert({
-              user_id: userId,
-              title: "General Chat",
-            })
-            .select("id")
-            .single()
-          sessionId = newSession?.id
+    // Configure provider options for extended thinking
+    // Note: Provider options must match the AI SDK's expected structure
+    const streamOptions: any = {
+      model: getClaude('claude-sonnet-4-5-20250929'),
+      system: contextPrompt,
+      messages: convertToModelMessages(messages),
+      tools: { medicalWebSearch },
+      temperature: 0.2,
+      stopWhen: stepCountIs(5),
+    }
+    
+    if (extendedThinking) {
+      streamOptions.providerOptions = {
+        anthropic: {
+          thinking: { type: 'enabled', budgetTokens: 12000 }
         }
       }
-
-      if (sessionId) {
-        await supabase.from("chat_messages").insert({
-          session_id: sessionId,
-          role: "assistant",
-          content: text,
-        })
-        console.log("Successfully saved assistant message to database")
-      }
-    } catch (error) {
-      console.error("Error saving assistant message to database:", error)
     }
-    */
+
+    const result = streamText(streamOptions)
+
+    // Return the streaming response with onFinish callback for saving
+    return result.toUIMessageStreamResponse({
+      originalMessages: messages,
+      onFinish: async ({ messages: finalMessages }) => {
+        try {
+          // Get or create session
+          let activeSessionId = sessionId
+          if (!activeSessionId) {
+            const { data: session } = await supabase
+              .from("chat_sessions")
+              .select("id")
+              .eq("user_id", userId)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .single()
+
+            activeSessionId = session?.id
+            if (!activeSessionId) {
+              const { data: newSession } = await supabase
+                .from("chat_sessions")
+                .insert({
+                  user_id: userId,
+                  title: "New Chat",
+                })
+                .select("id")
+                .single()
+              activeSessionId = newSession?.id
+            }
+          }
+
+          // Save all messages
+          if (activeSessionId && finalMessages) {
+            for (const message of finalMessages) {
+              // Extract text content from message parts
+              const textContent = message.parts
+                ?.filter((part: any) => part.type === 'text')
+                .map((part: any) => part.text)
+                .join('\n') || ''
+              
+              if (textContent) {
+                await supabase.from("chat_messages").insert({
+                  session_id: activeSessionId,
+                  role: message.role,
+                  content: textContent,
+                })
+              }
+            }
+            console.log("Successfully saved messages to database")
+          }
+        } catch (error) {
+          console.error("Error saving messages to database:", error)
+        }
+      }
+    })
+
   } catch (error) {
-    console.error("[v0] Chat API error:", error)
+    console.error("[Chat API] Error:", error)
     return new Response("Internal Server Error", { status: 500 })
   }
 }

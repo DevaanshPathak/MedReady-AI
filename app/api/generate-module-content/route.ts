@@ -3,7 +3,7 @@ import { z } from "zod"
 import { createClient } from "@/lib/supabase/server"
 import { redis } from "@/lib/redis"
 import { medicalWebSearch } from "@/lib/web-search-tool"
-import { getClaude } from "@/lib/ai-provider"
+import { anthropic } from '@ai-sdk/anthropic'
 
 export const maxDuration = 90
 
@@ -62,41 +62,37 @@ export async function POST(req: Request) {
     }
 
     // Generate complete chapter content
+    // Reduce content expectations to fit within model output limits
     const { object } = await generateObject({
-      model: getClaude('claude-sonnet-4-5-20250929'),
+      model: anthropic('claude-sonnet-4-5-20250929'),
       schema: moduleContentSchema,
-      prompt: `Generate a COMPLETE, comprehensive learning module for healthcare workers in rural India.
+      maxRetries: 2,
+      prompt: `Generate a comprehensive learning module for healthcare workers in rural India.
 
 Module: ${module.title}
 Description: ${module.description}
 Category: ${module.category}
 Target Audience: ${profile?.role || "Healthcare Worker"} with ${profile?.specialization || "general"} specialization
 
-CRITICAL: Use the web search tool to find the most current medical protocols, guidelines, and evidence-based practices from trusted sources like WHO, ICMR, CDC, and medical journals. Include proper citations with links in your response.
-
-IMPORTANT: Generate the ENTIRE module content in one go. Create 6-8 comprehensive sections that cover the topic completely.
+IMPORTANT: Generate 4-5 focused sections that cover the topic completely. Be concise but comprehensive.
 
 Requirements for EACH section:
-1. Detailed, actionable content (300-400 words per section) with current protocols
-2. 4-6 key points to remember based on latest evidence
-3. 3-5 practical tips specifically for rural healthcare settings
+1. Clear, actionable content (150-200 words per section) with current protocols
+2. 4-5 key points to remember based on latest evidence
+3. 3-4 practical tips specifically for rural healthcare settings
 4. Warning signs to watch for (when applicable)
-5. Specific protocols, dosages, and procedures from current guidelines
+5. Specific protocols and procedures from current guidelines
 6. Clear referral criteria to higher facilities
-7. Include citations to current medical sources and guidelines
 
 Overall Module Requirements:
-- Follow CURRENT Indian national health protocols (MoHFW, ICMR) and WHO guidelines
-- Include latest research findings and evidence-based practices
+- Follow Indian national health protocols (MoHFW, ICMR) and WHO guidelines
 - Consider resource limitations in rural settings
 - Use simple, clear language accessible to all healthcare workers
 - Address common scenarios in rural Indian healthcare
-- Provide comprehensive coverage from basics to advanced topics
 - Include emergency protocols and first aid procedures
 - Cover prevention, diagnosis, and treatment aspects
-- Cite current medical literature and official guidelines
 
-Make this a complete, self-contained learning resource that a healthcare worker can use to master the topic with the most up-to-date information available.`,
+Make this a complete, self-contained learning resource. Focus on essential, practical information.`,
       temperature: 0.7,
     })
 

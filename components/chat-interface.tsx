@@ -48,6 +48,7 @@ interface ChatInterfaceProps {
 
 export function ChatInterface({ userId, profile, initialMessages, initialSessions, currentSessionId }: ChatInterfaceProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("general")
+  const [extendedThinking, setExtendedThinking] = useState<boolean>(false)
   const [conversation, setConversation] = useState<Array<{
     id: string
     role: "user" | "assistant"
@@ -58,13 +59,20 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
       publishedDate?: string
       domain?: string
     }>
-    toolCalls?: number
+    toolCalls?: Array<{
+      toolName: string
+      args: any
+      result?: any
+      timestamp: string
+    }>
+    thinking?: string
     created_at: string
   }>>(initialMessages.map(msg => ({
     ...msg,
     role: msg.role as "user" | "assistant",
     citations: [],
-    toolCalls: 0
+    toolCalls: [],
+    thinking: undefined
   })))
   const [sessions, setSessions] = useState(initialSessions)
   const [currentSession, setCurrentSession] = useState(currentSessionId)
@@ -128,7 +136,8 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
         ...msg,
         role: msg.role as "user" | "assistant",
         citations: [],
-        toolCalls: 0
+        toolCalls: [],
+        thinking: undefined
       })))
     } catch (error) {
       console.error("Error loading session:", error)
@@ -177,11 +186,29 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
 
     setIsLoading(true)
 
-    // Ensure we have a current session
+    // Create session ONLY if we don't have one yet
     let sessionId = currentSession
     if (!sessionId) {
-      await createNewSession()
-      sessionId = currentSession
+      try {
+        const { data: newSession, error } = await supabase
+          .from("chat_sessions")
+          .insert({
+            user_id: userId,
+            title: "New Chat", // Temporary, will be updated after first message
+          })
+          .select()
+          .single()
+
+        if (error) throw error
+
+        sessionId = newSession.id
+        setSessions(prev => [newSession, ...prev])
+        setCurrentSession(sessionId)
+      } catch (error) {
+        console.error("Error creating session:", error)
+        setIsLoading(false)
+        return
+      }
     }
 
     // Add user message to conversation immediately
@@ -232,7 +259,8 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
           specialization: profile?.specialization,
           location: profile?.location,
           category: selectedCategory,
-          sessionId
+          sessionId,
+          extendedThinking
         }),
       })
 
@@ -249,13 +277,15 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
         role: "assistant",
         content: "",
         citations: [],
-        toolCalls: 0,
+        toolCalls: [],
+        thinking: undefined,
         created_at: new Date().toISOString(),
       }])
 
       const reader = response.body.getReader()
       const decoder = new TextDecoder()
       let buffer = ""
+      let currentToolCall: any = null
 
       const processChunk = (chunkText: string) => {
         buffer += chunkText
@@ -270,13 +300,43 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
             const evt = JSON.parse(jsonStr)
             // Handle AI SDK data stream event types
             if (evt.type === 'text-delta' && typeof evt.delta === 'string') {
-              setConversation(prev => prev.map(m => m.id === assistantId ? { ...m, content: m.content + evt.delta } : m))
+              setConversation(prev => prev.map(m => 
+                m.id === assistantId ? { ...m, content: m.content + evt.delta } : m
+              ))
+            } else if (evt.type === 'thinking-delta' && typeof evt.delta === 'string') {
+              // Extended thinking tokens (Claude Sonnet 4.5)
+              setConversation(prev => prev.map(m => 
+                m.id === assistantId ? { ...m, thinking: (m.thinking || '') + evt.delta } : m
+              ))
             } else if (evt.type === 'tool-call') {
-              // Show simple tool activity indicator by appending a status line
-              setConversation(prev => prev.map(m => m.id === assistantId ? { ...m, content: m.content + "\n\n_Tool: " + (evt.toolName || 'tool') + "…_" } : m))
+              // Tool is being invoked
+              currentToolCall = {
+                toolName: evt.toolName,
+                args: evt.args,
+                timestamp: new Date().toISOString()
+              }
+              setConversation(prev => prev.map(m => 
+                m.id === assistantId ? { 
+                  ...m, 
+                  toolCalls: [...(m.toolCalls || []), currentToolCall]
+                } : m
+              ))
             } else if (evt.type === 'tool-result') {
-              // Optionally append a brief acknowledgement
-              setConversation(prev => prev.map(m => m.id === assistantId ? { ...m, content: m.content + "\n\n_(tool result received)_" } : m))
+              // Tool result received
+              if (currentToolCall) {
+                setConversation(prev => prev.map(m => {
+                  if (m.id === assistantId && m.toolCalls) {
+                    const updatedToolCalls = [...m.toolCalls]
+                    const lastCall = updatedToolCalls[updatedToolCalls.length - 1]
+                    if (lastCall) {
+                      lastCall.result = evt.result
+                    }
+                    return { ...m, toolCalls: updatedToolCalls }
+                  }
+                  return m
+                }))
+                currentToolCall = null
+              }
             }
           } catch (e) {
             // Ignore parse errors for non-JSON lines
@@ -291,25 +351,57 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
         processChunk(chunk)
       }
 
-      // Update session metadata
+      // Update session metadata and generate title if this is the first message
       const currentSessionData = sessions.find(s => s.id === sessionId)
-      const shouldUpdateTitle = currentSessionData?.title === "New Chat" && conversation.length === 0
-      if (shouldUpdateTitle) {
-        const title = message.length > 50 ? message.substring(0, 50) + "..." : message
-        await supabase
-          .from("chat_sessions")
-          .update({ 
-            updated_at: new Date().toISOString(),
-            title
+      const isFirstMessage = currentSessionData?.title === "New Chat" && conversation.length === 0
+      
+      if (isFirstMessage) {
+        // Generate a smart title using Claude Haiku
+        try {
+          const titleResponse = await fetch("/api/generate-chat-title", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message,
+              userId,
+              sessionId,
+            }),
           })
-          .eq("id", sessionId)
-        setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, updated_at: new Date().toISOString(), title } : s))
+
+          if (titleResponse.ok) {
+            const { title } = await titleResponse.json()
+            setSessions(prev => prev.map(s => 
+              s.id === sessionId 
+                ? { ...s, updated_at: new Date().toISOString(), title } 
+                : s
+            ))
+          } else {
+            // Fallback to truncated message if API fails
+            const fallbackTitle = message.length > 50 ? message.substring(0, 50) + "..." : message
+            await supabase
+              .from("chat_sessions")
+              .update({ title: fallbackTitle, updated_at: new Date().toISOString() })
+              .eq("id", sessionId)
+            setSessions(prev => prev.map(s => 
+              s.id === sessionId 
+                ? { ...s, updated_at: new Date().toISOString(), title: fallbackTitle } 
+                : s
+            ))
+          }
+        } catch (error) {
+          console.error("Error generating title:", error)
+        }
       } else {
+        // Just update timestamp for subsequent messages
         await supabase
           .from("chat_sessions")
           .update({ updated_at: new Date().toISOString() })
           .eq("id", sessionId)
-        setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, updated_at: new Date().toISOString() } : s))
+        setSessions(prev => prev.map(s => 
+          s.id === sessionId 
+            ? { ...s, updated_at: new Date().toISOString() } 
+            : s
+        ))
       }
     } catch (error) {
       console.error("Error streaming AI response:", error)
@@ -387,6 +479,130 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
     )
   }
 
+  // Component to display thinking process
+  const ThinkingBlock = ({ thinking }: { thinking: string }) => {
+    const [isExpanded, setIsExpanded] = useState(false)
+    
+    return (
+      <div className="my-3 overflow-hidden rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50/50 dark:bg-purple-950/20">
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex w-full items-center justify-between px-4 py-2.5 text-sm hover:bg-purple-100/50 dark:hover:bg-purple-900/20 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <svg className="h-4 w-4 text-purple-600 dark:text-purple-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+            <span className="font-medium text-purple-900 dark:text-purple-100">
+              Extended Thinking
+            </span>
+            <span className="text-xs text-purple-600 dark:text-purple-400">
+              ({thinking.length} chars)
+            </span>
+          </div>
+          <svg
+            className={`h-4 w-4 text-purple-600 dark:text-purple-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        {isExpanded && (
+          <div className="border-t border-purple-200 dark:border-purple-800 px-4 py-3">
+            <div className="text-sm text-purple-900 dark:text-purple-100 whitespace-pre-wrap font-mono text-xs leading-relaxed">
+              {thinking}
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // Component to display tool calls
+  const ToolCallsBlock = ({ toolCalls }: { toolCalls: Array<{ toolName: string; args: any; result?: any; timestamp: string }> }) => {
+    const [expandedIndex, setExpandedIndex] = useState<number | null>(null)
+    
+    return (
+      <div className="my-3 space-y-2">
+        {toolCalls.map((tool, index) => (
+          <div key={index} className="overflow-hidden rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20">
+            <button
+              onClick={() => setExpandedIndex(expandedIndex === index ? null : index)}
+              className="flex w-full items-center justify-between px-4 py-2.5 text-sm hover:bg-blue-100/50 dark:hover:bg-blue-900/20 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <svg className="h-4 w-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <span className="font-medium text-blue-900 dark:text-blue-100">
+                  {tool.toolName === 'medicalWebSearch' ? '🔍 Medical Web Search' : tool.toolName}
+                </span>
+                {tool.result && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
+                    Complete
+                  </span>
+                )}
+                {!tool.result && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 flex items-center gap-1">
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-yellow-600 animate-pulse" />
+                    Searching...
+                  </span>
+                )}
+              </div>
+              <svg
+                className={`h-4 w-4 text-blue-600 dark:text-blue-400 transition-transform ${expandedIndex === index ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {expandedIndex === index && (
+              <div className="border-t border-blue-200 dark:border-blue-800 px-4 py-3 space-y-3">
+                <div>
+                  <div className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-1">Query:</div>
+                  <div className="text-sm text-blue-900 dark:text-blue-100 bg-blue-100/50 dark:bg-blue-900/20 rounded px-2 py-1">
+                    {tool.args?.query || JSON.stringify(tool.args)}
+                  </div>
+                </div>
+                {tool.result && (
+                  <div>
+                    <div className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-1">
+                      Results ({Array.isArray(tool.result) ? tool.result.length : '1'}):
+                    </div>
+                    <div className="text-sm text-blue-900 dark:text-blue-100 space-y-2">
+                      {Array.isArray(tool.result) && tool.result.map((item: any, i: number) => (
+                        <div key={i} className="bg-blue-100/50 dark:bg-blue-900/20 rounded px-2 py-2">
+                          <div className="font-medium text-xs mb-1">{item.title}</div>
+                          <a 
+                            href={item.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-600 dark:text-blue-400 hover:underline block truncate"
+                          >
+                            {item.url}
+                          </a>
+                          {item.content && (
+                            <div className="text-xs text-blue-800 dark:text-blue-200 mt-1 line-clamp-2">
+                              {item.content.slice(0, 150)}...
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   return (
     <div className="flex w-full h-full">
       {/* Sidebar */}
@@ -445,7 +661,7 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
               <div className="text-center py-8">
                 <div className="text-4xl mb-2">💬</div>
                 <p className="text-sm text-muted-foreground">No conversations yet</p>
-                <p className="text-xs text-muted-foreground/70 mt-1">Start a new chat to begin</p>
+                <p className="text-xs text-muted-foreground/70 mt-1">Type a message below to start</p>
               </div>
             ) : (
               <div className="space-y-1 max-h-80 overflow-y-auto">
@@ -524,6 +740,24 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
               <Badge variant="secondary" className="px-3 py-1">
                 {selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}
               </Badge>
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-border bg-background/50">
+                <svg className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                <span className="text-xs font-medium text-muted-foreground">Thinking</span>
+                <button
+                  onClick={() => setExtendedThinking(!extendedThinking)}
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                    extendedThinking ? 'bg-purple-600' : 'bg-gray-300 dark:bg-gray-600'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                      extendedThinking ? 'translate-x-5' : 'translate-x-0.5'
+                    }`}
+                  />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -541,14 +775,11 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
                 </h3>
                 <p className="mb-8 max-w-md text-muted-foreground leading-relaxed">
                   Your AI-powered medical knowledge assistant. Ask questions about protocols, treatments, drug
-                  interactions, and more.
+                  interactions, and more. Start typing below to begin!
                 </p>
-                <Button
-                  onClick={createNewSession}
-                  className="bg-gradient-to-r from-[#0066CC] to-[#00A86B] hover:from-[#0052A3] hover:to-[#008F5A] text-white shadow-lg"
-                >
-                  Start New Chat
-                </Button>
+                <div className="text-sm text-muted-foreground/70 italic">
+                  💡 Your chat will be automatically titled based on your first message
+                </div>
               </div>
             </div>
           ) : (
@@ -570,6 +801,16 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
                         : "bg-muted/50 border border-border/50 text-foreground shadow-sm"
                     }`}
                   >
+                    {/* Display thinking if available (only for assistant) */}
+                    {message.role === "assistant" && message.thinking && (
+                      <ThinkingBlock thinking={message.thinking} />
+                    )}
+                    
+                    {/* Display tool calls if available (only for assistant) */}
+                    {message.role === "assistant" && message.toolCalls && message.toolCalls.length > 0 && (
+                      <ToolCallsBlock toolCalls={message.toolCalls} />
+                    )}
+                    
                       <div className={`text-sm leading-relaxed ${
                         message.role === "user" 
                           ? "prose prose-sm max-w-none prose-headings:text-white prose-p:text-white prose-strong:text-white prose-em:text-white prose-ul:text-white prose-ol:text-white prose-li:text-white prose-a:text-blue-200 prose-a:no-underline hover:prose-a:underline"

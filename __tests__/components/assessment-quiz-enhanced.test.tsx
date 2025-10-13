@@ -17,17 +17,30 @@ jest.mock('@/hooks/use-toast', () => ({
 
 // Mock Supabase client
 const mockSupabase = {
-  from: jest.fn(() => ({
-    select: jest.fn().mockReturnThis(),
-    insert: jest.fn().mockReturnThis(),
-    update: jest.fn().mockReturnThis(),
-    delete: jest.fn().mockReturnThis(),
-    upsert: jest.fn().mockReturnThis(),
-    eq: jest.fn().mockReturnThis(),
-    lte: jest.fn().mockReturnThis(),
-    single: jest.fn(),
-  })),
-  rpc: jest.fn(),
+  from: jest.fn((table) => {
+    const chainable = {
+      select: jest.fn().mockReturnThis(),
+      insert: jest.fn().mockReturnThis(),
+      update: jest.fn().mockReturnThis(),
+      delete: jest.fn().mockReturnThis(),
+      upsert: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      lte: jest.fn().mockReturnThis(),
+      order: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      single: jest.fn().mockResolvedValue({
+        data: table === 'quiz_sessions' ? { id: 'session-123' } : null,
+        error: null,
+      }),
+    }
+    // Make it await-able
+    chainable.then = jest.fn((resolve) => {
+      resolve({ data: [], error: null })
+      return Promise.resolve({ data: [], error: null })
+    })
+    return chainable
+  }),
+  rpc: jest.fn().mockResolvedValue({ data: null, error: null }),
 }
 
 jest.mock('@/lib/supabase/client', () => ({

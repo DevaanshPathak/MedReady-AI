@@ -31,7 +31,7 @@ export async function POST(req: Request) {
 
     // Generate a concise title using Claude Haiku (fast and cheap)
     const result = await generateText({
-      model: getClaude('claude-haiku-3-5-20241022'),
+      model: getClaude('claude-3-5-haiku-20241022'),
       prompt: getChatTitlePrompt(message),
       temperature: 0.3,
     })

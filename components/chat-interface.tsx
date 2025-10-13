@@ -235,58 +235,83 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
         }),
       })
 
-      if (response.ok) {
-        const data = await response.json()
-        
-        // Add AI response to conversation
-        const aiMessage = {
-          id: `assistant-${Date.now()}`,
-          role: "assistant" as const,
-          content: data.message,
-          citations: data.citations || [],
-          toolCalls: data.toolCalls || 0,
-          created_at: new Date().toISOString(),
-        }
-        setConversation(prev => [...prev, aiMessage])
+      if (!response.ok || !response.body) {
+        console.error("Failed to start stream:", response.status, response.statusText)
+        setIsLoading(false)
+        return
+      }
 
-        // Update session timestamp and title if it's the first message
-        const currentSessionData = sessions.find(s => s.id === sessionId)
-        const shouldUpdateTitle = currentSessionData?.title === "New Chat" && conversation.length === 0
-        
-        if (shouldUpdateTitle) {
-          const title = message.length > 50 ? message.substring(0, 50) + "..." : message
-          await supabase
-            .from("chat_sessions")
-            .update({ 
-              updated_at: new Date().toISOString(),
-              title: title
-            })
-            .eq("id", sessionId)
-          
-          // Update sessions list
-          setSessions(prev => prev.map(s => 
-            s.id === sessionId 
-              ? { ...s, updated_at: new Date().toISOString(), title: title }
-              : s
-          ))
-        } else {
-          await supabase
-            .from("chat_sessions")
-            .update({ updated_at: new Date().toISOString() })
-            .eq("id", sessionId)
+      // Create an assistant placeholder message for streaming
+      const assistantId = `assistant-${Date.now()}`
+      setConversation(prev => [...prev, {
+        id: assistantId,
+        role: "assistant",
+        content: "",
+        citations: [],
+        toolCalls: 0,
+        created_at: new Date().toISOString(),
+      }])
 
-          // Update sessions list to reflect the change
-          setSessions(prev => prev.map(s => 
-            s.id === sessionId 
-              ? { ...s, updated_at: new Date().toISOString() }
-              : s
-          ))
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ""
+
+      const processChunk = (chunkText: string) => {
+        buffer += chunkText
+        const lines = buffer.split("\n")
+        buffer = lines.pop() || ""
+        for (const line of lines) {
+          const trimmed = line.trim()
+          if (!trimmed || !trimmed.startsWith("data:")) continue
+          const jsonStr = trimmed.slice(5).trim()
+          if (!jsonStr || jsonStr === "[DONE]") continue
+          try {
+            const evt = JSON.parse(jsonStr)
+            // Handle AI SDK data stream event types
+            if (evt.type === 'text-delta' && typeof evt.delta === 'string') {
+              setConversation(prev => prev.map(m => m.id === assistantId ? { ...m, content: m.content + evt.delta } : m))
+            } else if (evt.type === 'tool-call') {
+              // Show simple tool activity indicator by appending a status line
+              setConversation(prev => prev.map(m => m.id === assistantId ? { ...m, content: m.content + "\n\n_Tool: " + (evt.toolName || 'tool') + "…_" } : m))
+            } else if (evt.type === 'tool-result') {
+              // Optionally append a brief acknowledgement
+              setConversation(prev => prev.map(m => m.id === assistantId ? { ...m, content: m.content + "\n\n_(tool result received)_" } : m))
+            }
+          } catch (e) {
+            // Ignore parse errors for non-JSON lines
+          }
         }
+      }
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        const chunk = decoder.decode(value, { stream: true })
+        processChunk(chunk)
+      }
+
+      // Update session metadata
+      const currentSessionData = sessions.find(s => s.id === sessionId)
+      const shouldUpdateTitle = currentSessionData?.title === "New Chat" && conversation.length === 0
+      if (shouldUpdateTitle) {
+        const title = message.length > 50 ? message.substring(0, 50) + "..." : message
+        await supabase
+          .from("chat_sessions")
+          .update({ 
+            updated_at: new Date().toISOString(),
+            title
+          })
+          .eq("id", sessionId)
+        setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, updated_at: new Date().toISOString(), title } : s))
       } else {
-        console.error("Failed to get AI response:", response.statusText)
+        await supabase
+          .from("chat_sessions")
+          .update({ updated_at: new Date().toISOString() })
+          .eq("id", sessionId)
+        setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, updated_at: new Date().toISOString() } : s))
       }
     } catch (error) {
-      console.error("Error getting AI response:", error)
+      console.error("Error streaming AI response:", error)
     } finally {
       setIsLoading(false)
     }

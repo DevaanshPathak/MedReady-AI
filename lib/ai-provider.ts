@@ -1,4 +1,5 @@
 import { createGateway } from 'ai'
+import { anthropic } from '@ai-sdk/anthropic'
 
 /**
  * Vercel AI Gateway configuration
@@ -24,5 +25,12 @@ const gateway = createGateway({
  */
 export function getModel(modelId: string) {
   return gateway.languageModel(modelId)
+}
+
+/**
+ * Helper to get an Anthropic Claude model directly via AI SDK provider
+ */
+export function getClaude(modelId: string = 'claude-sonnet-4-5-20250929') {
+  return anthropic(modelId)
 }
 

@@ -98,10 +98,14 @@ export async function GET(request: Request) {
 
     if (lowScoreModules && lowScoreModules.length > 0) {
       for (const progress of lowScoreModules) {
+        const progressModule: any = (progress as any).modules
+        const progressModuleTitle = Array.isArray(progressModule)
+          ? progressModule[0]?.title
+          : progressModule?.title
         recommendations.push({
           user_id: user.id,
           recommendation_type: "review",
-          title: `Review ${progress.modules?.title}`,
+          title: `Review ${progressModuleTitle}`,
           description: `Your score was ${progress.score}%. A review might help solidify your knowledge.`,
           module_id: progress.module_id,
           priority: 7,
@@ -124,11 +128,15 @@ export async function GET(request: Request) {
       )
 
       for (const review of uniqueModules) {
-        if (review.modules) {
+        const reviewModule: any = (review as any).modules
+        const reviewModuleTitle = Array.isArray(reviewModule)
+          ? reviewModule[0]?.title
+          : reviewModule?.title
+        if (reviewModule) {
           recommendations.push({
             user_id: user.id,
             recommendation_type: "review",
-            title: `Review Questions: ${review.modules.title}`,
+            title: `Review Questions: ${reviewModuleTitle}`,
             description: "You have questions due for review based on spaced repetition",
             module_id: review.module_id,
             priority: 8,

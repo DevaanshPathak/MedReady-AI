@@ -1,7 +1,7 @@
 import { generateText, stepCountIs } from "ai"
 import { createClient } from "@/lib/supabase/server"
 import { emergencyWebSearch } from "@/lib/web-search-tool"
-import { getModel } from "@/lib/ai-provider"
+import { getClaude } from "@/lib/ai-provider"
 
 export const maxDuration = 30
 
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
 
     // Generate emergency guidance using Grok-4-fast-reasoning for critical decisions
     const { text, toolCalls, toolResults } = await generateText({
-      model: getModel("xai/grok-4-fast-reasoning"),
+      model: getClaude('claude-sonnet-4-5-20250929'),
       prompt: `You are an emergency medical AI assistant for rural healthcare workers in India. Provide immediate, actionable guidance for this emergency situation.
 
 Note: If you need the most current emergency protocols or recent guidelines, use the emergency web search tool to find up-to-date information from trusted emergency medicine sources.

@@ -3,7 +3,7 @@ import { z } from "zod"
 import { createClient } from "@/lib/supabase/server"
 import { redis } from "@/lib/redis"
 import { medicalWebSearch } from "@/lib/web-search-tool"
-import { getModel } from "@/lib/ai-provider"
+import { getClaude } from "@/lib/ai-provider"
 
 export const maxDuration = 90
 
@@ -61,9 +61,9 @@ export async function POST(req: Request) {
       // Continue with generation if cache fails
     }
 
-    // Generate complete chapter content with web search for current protocols
-    const { object, toolCalls, toolResults } = await generateObject({
-      model: getModel("xai/grok-4-fast-reasoning"),
+    // Generate complete chapter content
+    const { object } = await generateObject({
+      model: getClaude('claude-sonnet-4-5-20250929'),
       schema: moduleContentSchema,
       prompt: `Generate a COMPLETE, comprehensive learning module for healthcare workers in rural India.
 
@@ -97,9 +97,6 @@ Overall Module Requirements:
 - Cite current medical literature and official guidelines
 
 Make this a complete, self-contained learning resource that a healthcare worker can use to master the topic with the most up-to-date information available.`,
-      tools: {
-        medicalWebSearch,
-      },
       temperature: 0.7,
     })
 
@@ -119,22 +116,10 @@ Make this a complete, self-contained learning resource that a healthcare worker 
       // Don't fail the request if caching fails
     }
 
-    // Extract citations from web search results
-    const citations = toolResults?.flatMap(result => {
-      if (result.toolName === 'medicalWebSearch' && Array.isArray(result)) {
-        return result.map((item: any) => ({
-          title: item.title,
-          url: item.url,
-          publishedDate: item.publishedDate
-        }))
-      }
-      return []
-    }) || []
-
     return Response.json({ 
       content: object,
-      citations: citations,
-      toolCalls: toolCalls?.length || 0
+      citations: [],
+      toolCalls: 0
     })
   } catch (error) {
     console.error("[v0] Generate module content error:", error)

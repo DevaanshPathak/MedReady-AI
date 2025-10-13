@@ -154,6 +154,15 @@ CREATE POLICY "Users can view their own gamification data"
   ON public.user_gamification FOR SELECT
   USING (auth.uid() = user_id);
 
+-- Allow users to create and update their own gamification rows
+CREATE POLICY "Users can insert their own gamification"
+  ON public.user_gamification FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own gamification"
+  ON public.user_gamification FOR UPDATE
+  USING (auth.uid() = user_id);
+
 -- Function to update study streak
 CREATE OR REPLACE FUNCTION update_study_streak(p_user_id UUID)
 RETURNS VOID AS $$

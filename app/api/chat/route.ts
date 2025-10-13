@@ -1,7 +1,7 @@
-import { generateText, stepCountIs } from "ai"
+import { streamText, stepCountIs, convertToModelMessages } from "ai"
 import { createClient } from "@/lib/supabase/server"
 import { medicalWebSearch } from "@/lib/web-search-tool"
-import { getModel } from "@/lib/ai-provider"
+import { getClaude } from "@/lib/ai-provider"
 
 export const maxDuration = 30
 
@@ -213,7 +213,8 @@ Format responses clearly with:
 - When to seek additional help`
 
           // Convert messages to a single prompt for generateText
-          const conversationHistory = messages.map((msg: any) => `${msg.role}: ${msg.content}`).join('\n\n')
+          const safeMessages = Array.isArray(messages) ? messages : []
+          const conversationHistory = safeMessages.map((msg: any) => `${msg.role}: ${msg.content}`).join('\n\n')
     const fullPrompt = `${contextPrompt}
 
 Conversation History:
@@ -221,21 +222,24 @@ ${conversationHistory}`
 
     console.log("About to call AI model with full prompt:", fullPrompt)
     
-          const { text, toolCalls, toolResults } = await generateText({
-            model: getModel("xai/grok-4-fast-reasoning"),
-            prompt: `${fullPrompt}
+          const uiMessages = Array.isArray(messages) && messages.length > 0
+            ? messages
+            : [{ role: "user", content: body.prompt ?? "" }]
 
-IMPORTANT: Always use the web search tool to find the most up-to-date information from trusted medical sources. Include proper citations with links in your response.`,
-            tools: {
-              medicalWebSearch,
-            },
+          const result = await streamText({
+            model: getClaude('claude-sonnet-4-5-20250929'),
+            system: contextPrompt,
+            messages: convertToModelMessages(uiMessages),
+            tools: { medicalWebSearch },
             temperature: 0.2,
             stopWhen: stepCountIs(5),
           })
 
-    console.log("AI generated response:", text)
+          // Immediately return SSE response compatible with AI SDK UI message stream protocol
+          return result.toUIMessageStreamResponse()
 
-    // Save assistant message to database
+    // Unreachable after streaming return; retain DB save path only if needed for non-streaming fallback
+    /* Save assistant message to database
     try {
       let sessionId = body.sessionId
       
@@ -274,24 +278,7 @@ IMPORTANT: Always use the web search tool to find the most up-to-date informatio
     } catch (error) {
       console.error("Error saving assistant message to database:", error)
     }
-
-          // Extract citations from web search results
-          const citations = toolResults?.flatMap(result => {
-            if (result.toolName === 'medicalWebSearch' && Array.isArray(result)) {
-              return result.map((item: any) => ({
-                title: item.title,
-                url: item.url,
-                publishedDate: item.publishedDate
-              }))
-            }
-            return []
-          }) || []
-
-          return Response.json({ 
-            message: text,
-            citations: citations,
-            toolCalls: toolCalls?.length || 0
-          })
+    */
   } catch (error) {
     console.error("[v0] Chat API error:", error)
     return new Response("Internal Server Error", { status: 500 })

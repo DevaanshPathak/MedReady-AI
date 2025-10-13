@@ -1,7 +1,7 @@
 import { generateObject } from "ai"
 import { z } from "zod"
 import { createClient } from "@/lib/supabase/server"
-import { getModel } from "@/lib/ai-provider"
+import { getClaude } from "@/lib/ai-provider"
 
 export const maxDuration = 30
 
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
 
     // Generate intelligent recommendations using Grok-4-fast-reasoning
     const { object } = await generateObject({
-      model: getModel("xai/grok-4-fast-reasoning"),
+      model: getClaude('claude-sonnet-4-5-20250929'),
       schema: recommendationSchema,
       prompt: `Analyze and recommend the best rural healthcare deployment opportunities for this healthcare worker.
 

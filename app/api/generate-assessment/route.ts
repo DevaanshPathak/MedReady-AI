@@ -1,7 +1,7 @@
 import { generateObject } from "ai"
 import { z } from "zod"
 import { createClient } from "@/lib/supabase/server"
-import { getModel } from "@/lib/ai-provider"
+import { getClaude } from "@/lib/ai-provider"
 
 export const maxDuration = 30
 
@@ -129,7 +129,7 @@ export async function POST(req: Request) {
     let object
     try {
       const result = await generateObject({
-        model: getModel("xai/grok-4-fast-reasoning"),
+        model: getClaude('claude-sonnet-4-5-20250929'),
         schema: assessmentSchema,
         prompt: `Generate a comprehensive assessment for healthcare workers on: ${module.title}
 
@@ -216,14 +216,12 @@ Time limit should be 15 minutes (900 seconds)`,
     console.error("[v0] Error details:", {
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
-      moduleId,
-      userId
+      // include minimal context if available
     })
     return new Response(JSON.stringify({ 
       error: "Internal Server Error", 
       details: error instanceof Error ? error.message : 'Unknown error',
-      moduleId,
-      userId 
+      
     }), { 
       status: 500,
       headers: { 'Content-Type': 'application/json' }

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
+import { CertificateBlockchain } from "@/lib/blockchain"
 
 export async function POST(request: Request) {
   try {
@@ -54,9 +55,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ certificate: existingCert })
     }
 
-    // Generate certificate
-    const verificationHash = Buffer.from(`${user.id}-${moduleId}-${Date.now()}`).toString("base64")
+    // Generate certificate and add to blockchain
+    const issuedAt = new Date().toISOString()
+    const certificateData = {
+      userId: user.id,
+      moduleId: moduleId,
+      skill: progress.modules.title,
+      level: "intermediate",
+      score: assessmentAttempt.score,
+      issuedAt
+    }
 
+    // Add certificate to blockchain
+    const block = await CertificateBlockchain.addCertificate(certificateData)
+
+    // Store certificate in database with blockchain hash
     const { data: certificate, error } = await supabase
       .from("certifications")
       .insert({
@@ -64,8 +77,8 @@ export async function POST(request: Request) {
         module_id: moduleId,
         skill: progress.modules.title,
         level: "intermediate",
-        certificate_hash: verificationHash,
-        issued_at: new Date().toISOString(),
+        certificate_hash: block.hash, // Use blockchain hash
+        issued_at: issuedAt,
         expires_at: new Date(Date.now() + 2 * 365 * 24 * 60 * 60 * 1000).toISOString(), // 2 years
       })
       .select()
@@ -73,7 +86,15 @@ export async function POST(request: Request) {
 
     if (error) throw error
 
-    return NextResponse.json({ certificate })
+    return NextResponse.json({ 
+      certificate,
+      blockchain: {
+        hash: block.hash,
+        blockIndex: block.index,
+        timestamp: block.timestamp,
+        nonce: block.nonce
+      }
+    })
   } catch (error) {
     console.error("[v0] Certificate generation error:", error)
     return NextResponse.json({ error: "Failed to generate certificate" }, { status: 500 })

@@ -2,6 +2,7 @@ import { generateText, stepCountIs } from "ai"
 import { createClient } from "@/lib/supabase/server"
 import { medicalWebSearch } from "@/lib/web-search-tool"
 import { getModel } from "@/lib/ai-provider"
+import { redis } from "@/lib/redis"
 
 export const maxDuration = 30
 
@@ -188,10 +189,12 @@ You must ALWAYS:
 - Write naturally without mentioning specific sources or URLs in the text
 - The citation display is handled automatically by the system`
 
+    // Declare activeSessionId at function scope
+    let activeSessionId = sessionId
+
     // Save user message to database first
     try {
       // Create a chat session if it doesn't exist
-      let activeSessionId = sessionId
       const { data: session } = !activeSessionId
         ? await supabase
         .from("chat_sessions")
@@ -231,6 +234,32 @@ You must ALWAYS:
       // Continue with the AI call even if database save fails
     }
 
+    // Check Redis cache for similar recent queries (session management)
+    const cacheKey = `chat:${userId}:${prompt.slice(0, 100)}`
+    try {
+      const cachedResponse = await redis.get(cacheKey)
+      if (cachedResponse && typeof cachedResponse === 'object') {
+        console.log("Returning cached response from Redis")
+        return Response.json(cachedResponse)
+      }
+    } catch (error) {
+      console.warn("Redis cache check failed, continuing with AI generation:", error)
+    }
+
+    // Store conversation context in Redis for session persistence
+    const conversationKey = `conversation:${userId}:${activeSessionId || 'default'}`
+    try {
+      await redis.lpush(conversationKey, JSON.stringify({
+        role: 'user',
+        content: prompt,
+        timestamp: Date.now()
+      }))
+      await redis.expire(conversationKey, 3600) // Expire after 1 hour
+      await redis.ltrim(conversationKey, 0, 49) // Keep last 50 messages
+    } catch (error) {
+      console.warn("Failed to store conversation in Redis:", error)
+    }
+
     console.log("About to call AI model with prompt:", prompt)
     console.log("Context prompt:", contextPrompt)
     
@@ -267,7 +296,6 @@ Please search for current information and provide a detailed, structured respons
 
     // Save assistant message to database
     try {
-      let activeSessionId = sessionId
       const { data: session } = !activeSessionId
         ? await supabase
         .from("chat_sessions")
@@ -322,11 +350,32 @@ Please search for current information and provide a detailed, structured respons
           // Use the AI generated response (stopWhen handles the multi-step process)
           const responseText = text || "I apologize, but I'm having trouble generating a response right now. Please try again or rephrase your question."
           
-          return Response.json({ 
+          const responsePayload = { 
             completion: responseText,
             citations: citations,
             toolCalls: toolCalls?.length || 0
-          })
+          }
+
+          // Cache the response in Redis for 5 minutes
+          try {
+            await redis.setex(cacheKey, 300, JSON.stringify(responsePayload))
+            console.log("Cached response in Redis")
+          } catch (error) {
+            console.warn("Failed to cache response in Redis:", error)
+          }
+
+          // Store assistant response in conversation history
+          try {
+            await redis.lpush(conversationKey, JSON.stringify({
+              role: 'assistant',
+              content: responseText,
+              timestamp: Date.now()
+            }))
+          } catch (error) {
+            console.warn("Failed to store assistant message in Redis:", error)
+          }
+
+          return Response.json(responsePayload)
   } catch (error) {
     console.error("[v0] Completion API error:", error)
     return new Response("Internal Server Error", { status: 500 })

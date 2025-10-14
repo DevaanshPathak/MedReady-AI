@@ -12,7 +12,7 @@ import remarkGfm from "remark-gfm"
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { useTheme } from "next-themes"
-import { Copy, Check } from "lucide-react"
+import { Copy, Check, X, Square } from "lucide-react"
 import { MedReadyLogo } from "@/components/medready-logo"
 import { SourcesBar } from "@/components/sources-bar"
 import { useChat } from '@ai-sdk/react'
@@ -78,6 +78,8 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
   const [currentSession, setCurrentSession] = useState(currentSessionId)
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [isStreaming, setIsStreaming] = useState(false)
+  const [abortController, setAbortController] = useState<AbortController | null>(null)
   const [copiedCode, setCopiedCode] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
@@ -88,6 +90,7 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
     conversation: conversation,
     conversationLength: conversation?.length,
     isLoading,
+    isStreaming,
     input
   })
 
@@ -185,6 +188,11 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
     if (!message.trim() || isLoading) return
 
     setIsLoading(true)
+    setIsStreaming(true)
+
+    // Create abort controller for cancellation
+    const controller = new AbortController()
+    setAbortController(controller)
 
     // Create session ONLY if we don't have one yet
     let sessionId = currentSession
@@ -207,6 +215,7 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
       } catch (error) {
         console.error("Error creating session:", error)
         setIsLoading(false)
+        setIsStreaming(false)
         return
       }
     }
@@ -262,11 +271,13 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
           sessionId,
           extendedThinking
         }),
+        signal: controller.signal
       })
 
       if (!response.ok || !response.body) {
         console.error("Failed to start stream:", response.status, response.statusText)
         setIsLoading(false)
+        setIsStreaming(false)
         return
       }
 
@@ -403,9 +414,30 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
             : s
         ))
       }
-    } catch (error) {
-      console.error("Error streaming AI response:", error)
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log("Stream aborted by user")
+        // Mark the last assistant message as incomplete
+        setConversation(prev => prev.map(m => {
+          if (m.role === 'assistant' && !m.content) {
+            return { ...m, content: '*Generation stopped by user*' }
+          }
+          return m
+        }))
+      } else {
+        console.error("Error streaming AI response:", error)
+      }
     } finally {
+      setIsLoading(false)
+      setIsStreaming(false)
+      setAbortController(null)
+    }
+  }
+
+  const stopGeneration = () => {
+    if (abortController) {
+      abortController.abort()
+      setIsStreaming(false)
       setIsLoading(false)
     }
   }
@@ -479,29 +511,43 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
     )
   }
 
-  // Component to display thinking process
+  // Component to display thinking process with enhanced UI
   const ThinkingBlock = ({ thinking }: { thinking: string }) => {
     const [isExpanded, setIsExpanded] = useState(false)
+    const isThinking = thinking && thinking.length > 0
     
     return (
-      <div className="my-3 overflow-hidden rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50/50 dark:bg-purple-950/20">
+      <div className="my-3 overflow-hidden rounded-xl border border-purple-200 dark:border-purple-800/50 bg-gradient-to-br from-purple-50/80 to-purple-100/50 dark:from-purple-950/30 dark:to-purple-900/20 shadow-sm">
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="flex w-full items-center justify-between px-4 py-2.5 text-sm hover:bg-purple-100/50 dark:hover:bg-purple-900/20 transition-colors"
+          className="flex w-full items-center justify-between px-4 py-3 text-sm hover:bg-purple-100/50 dark:hover:bg-purple-900/30 transition-all duration-200"
         >
-          <div className="flex items-center gap-2">
-            <svg className="h-4 w-4 text-purple-600 dark:text-purple-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-            </svg>
-            <span className="font-medium text-purple-900 dark:text-purple-100">
-              Extended Thinking
-            </span>
-            <span className="text-xs text-purple-600 dark:text-purple-400">
-              ({thinking.length} chars)
-            </span>
+          <div className="flex items-center gap-3">
+            {/* Animated thinking icon */}
+            <div className="relative">
+              <svg className="h-5 w-5 text-purple-600 dark:text-purple-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
+              {isThinking && (
+                <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-purple-500"></span>
+                </span>
+              )}
+            </div>
+            
+            <div className="text-left">
+              <span className="font-semibold text-purple-900 dark:text-purple-100">
+                Extended Thinking
+              </span>
+              <div className="text-xs text-purple-600 dark:text-purple-400 mt-0.5">
+                {thinking.split(' ').length} words • {thinking.length} characters
+              </div>
+            </div>
           </div>
+          
           <svg
-            className={`h-4 w-4 text-purple-600 dark:text-purple-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+            className={`h-4 w-4 text-purple-600 dark:text-purple-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -510,8 +556,8 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
           </svg>
         </button>
         {isExpanded && (
-          <div className="border-t border-purple-200 dark:border-purple-800 px-4 py-3">
-            <div className="text-sm text-purple-900 dark:text-purple-100 whitespace-pre-wrap font-mono text-xs leading-relaxed">
+          <div className="border-t border-purple-200 dark:border-purple-800/50 bg-white/50 dark:bg-purple-950/20 px-4 py-4">
+            <div className="text-sm text-purple-900 dark:text-purple-100 whitespace-pre-wrap font-mono leading-relaxed bg-purple-50/50 dark:bg-purple-900/20 rounded-lg p-3 border border-purple-100 dark:border-purple-800/30">
               {thinking}
             </div>
           </div>
@@ -520,85 +566,135 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
     )
   }
 
-  // Component to display tool calls
+  // Component to display tool calls with enhanced streaming UI
   const ToolCallsBlock = ({ toolCalls }: { toolCalls: Array<{ toolName: string; args: any; result?: any; timestamp: string }> }) => {
     const [expandedIndex, setExpandedIndex] = useState<number | null>(null)
     
     return (
       <div className="my-3 space-y-2">
-        {toolCalls.map((tool, index) => (
-          <div key={index} className="overflow-hidden rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20">
-            <button
-              onClick={() => setExpandedIndex(expandedIndex === index ? null : index)}
-              className="flex w-full items-center justify-between px-4 py-2.5 text-sm hover:bg-blue-100/50 dark:hover:bg-blue-900/20 transition-colors"
-            >
-              <div className="flex items-center gap-2">
-                <svg className="h-4 w-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <span className="font-medium text-blue-900 dark:text-blue-100">
-                  {tool.toolName === 'medicalWebSearch' ? '🔍 Medical Web Search' : tool.toolName}
-                </span>
-                {tool.result && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
-                    Complete
-                  </span>
-                )}
-                {!tool.result && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 flex items-center gap-1">
-                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-yellow-600 animate-pulse" />
-                    Searching...
-                  </span>
-                )}
-              </div>
-              <svg
-                className={`h-4 w-4 text-blue-600 dark:text-blue-400 transition-transform ${expandedIndex === index ? 'rotate-180' : ''}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+        {toolCalls.map((tool, index) => {
+          const isSearching = !tool.result
+          const searchResults = Array.isArray(tool.result) ? tool.result : []
+          
+          return (
+            <div key={index} className="overflow-hidden rounded-xl border border-blue-200 dark:border-blue-800/50 bg-gradient-to-br from-blue-50/80 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/20 shadow-sm">
+              <button
+                onClick={() => setExpandedIndex(expandedIndex === index ? null : index)}
+                className="flex w-full items-center justify-between px-4 py-3 text-sm hover:bg-blue-100/50 dark:hover:bg-blue-900/30 transition-all duration-200"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            {expandedIndex === index && (
-              <div className="border-t border-blue-200 dark:border-blue-800 px-4 py-3 space-y-3">
-                <div>
-                  <div className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-1">Query:</div>
-                  <div className="text-sm text-blue-900 dark:text-blue-100 bg-blue-100/50 dark:bg-blue-900/20 rounded px-2 py-1">
-                    {tool.args?.query || JSON.stringify(tool.args)}
+                <div className="flex items-center gap-3">
+                  {/* Animated search icon */}
+                  <div className={`relative ${isSearching ? 'animate-pulse' : ''}`}>
+                    <svg className="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    {isSearching && (
+                      <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="text-left">
+                    <div className="font-semibold text-blue-900 dark:text-blue-100 flex items-center gap-2">
+                      {tool.toolName === 'medicalWebSearch' ? '🔍 Medical Web Search' : tool.toolName}
+                      {!isSearching && searchResults.length > 0 && (
+                        <span className="text-xs font-normal px-2 py-0.5 rounded-full bg-blue-200 dark:bg-blue-800 text-blue-700 dark:text-blue-300">
+                          {searchResults.length} {searchResults.length === 1 ? 'source' : 'sources'}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-blue-700 dark:text-blue-300 mt-0.5">
+                      {tool.args?.query || 'Searching...'}
+                    </div>
+                  </div>
+                  
+                  {/* Status badge */}
+                  {isSearching ? (
+                    <span className="text-xs px-2.5 py-1 rounded-full bg-gradient-to-r from-yellow-100 to-amber-100 dark:from-yellow-900/40 dark:to-amber-900/40 text-yellow-700 dark:text-yellow-300 flex items-center gap-1.5 font-medium shadow-sm">
+                      <span className="inline-flex h-1.5 w-1.5 rounded-full bg-yellow-500 animate-pulse" />
+                      Searching...
+                    </span>
+                  ) : (
+                    <span className="text-xs px-2.5 py-1 rounded-full bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/40 dark:to-emerald-900/40 text-green-700 dark:text-green-300 flex items-center gap-1.5 font-medium shadow-sm">
+                      <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      Complete
+                    </span>
+                  )}
+                </div>
+                
+                <svg
+                  className={`h-4 w-4 text-blue-600 dark:text-blue-400 transition-transform duration-200 ${expandedIndex === index ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {expandedIndex === index && tool.result && (
+                <div className="border-t border-blue-200 dark:border-blue-800/50 bg-white/50 dark:bg-blue-950/20">
+                  <div className="px-4 py-4 space-y-3">
+                    {searchResults.length > 0 ? (
+                      <div className="space-y-3">
+                        {searchResults.map((item: any, i: number) => (
+                          <div key={i} className="group p-3 rounded-lg bg-white dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800/30 hover:border-blue-300 dark:hover:border-blue-600 transition-all duration-200 hover:shadow-md">
+                            <div className="flex items-start justify-between gap-3 mb-2">
+                              <h4 className="font-semibold text-sm text-blue-900 dark:text-blue-100 flex-1 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors">
+                                {item.title}
+                              </h4>
+                              {item.publishedDate && (
+                                <span className="text-xs text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                                  {new Date(item.publishedDate).toLocaleDateString()}
+                                </span>
+                              )}
+                            </div>
+                            <a 
+                              href={item.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 hover:underline flex items-center gap-1 mb-2 group/link"
+                            >
+                              <span className="truncate max-w-md">{item.url}</span>
+                              <svg className="h-3 w-3 flex-shrink-0 opacity-0 group-hover/link:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
+                            </a>
+                            {item.content && (
+                              <p className="text-xs text-blue-800 dark:text-blue-200 leading-relaxed line-clamp-3">
+                                {item.content.slice(0, 200)}{item.content.length > 200 ? '...' : ''}
+                              </p>
+                            )}
+                            {item.highlights && item.highlights.length > 0 && (
+                              <div className="mt-2 pt-2 border-t border-blue-100 dark:border-blue-800/30">
+                                <div className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">Key Highlights:</div>
+                                <div className="space-y-1">
+                                  {item.highlights.slice(0, 2).map((highlight: string, hi: number) => (
+                                    <div key={hi} className="text-xs text-blue-600 dark:text-blue-400 italic">
+                                      "...{highlight}..."
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-4 text-sm text-blue-600 dark:text-blue-400">
+                        No results found
+                      </div>
+                    )}
                   </div>
                 </div>
-                {tool.result && (
-                  <div>
-                    <div className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-1">
-                      Results ({Array.isArray(tool.result) ? tool.result.length : '1'}):
-                    </div>
-                    <div className="text-sm text-blue-900 dark:text-blue-100 space-y-2">
-                      {Array.isArray(tool.result) && tool.result.map((item: any, i: number) => (
-                        <div key={i} className="bg-blue-100/50 dark:bg-blue-900/20 rounded px-2 py-2">
-                          <div className="font-medium text-xs mb-1">{item.title}</div>
-                          <a 
-                            href={item.url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-xs text-blue-600 dark:text-blue-400 hover:underline block truncate"
-                          >
-                            {item.url}
-                          </a>
-                          {item.content && (
-                            <div className="text-xs text-blue-800 dark:text-blue-200 mt-1 line-clamp-2">
-                              {item.content.slice(0, 150)}...
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
+              )}
+            </div>
+          )
+        })}
       </div>
     )
   }
@@ -784,21 +880,22 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
             </div>
           ) : (
             <div className="px-6 py-6 space-y-6">
-              {conversation.map((message) => (
+              {conversation.map((message, idx) => (
                 <div
                   key={message.id}
-                  className={`flex gap-4 ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                  className={`flex gap-4 ${message.role === "user" ? "justify-end" : "justify-start"} animate-in fade-in slide-in-from-bottom-2 duration-500`}
+                  style={{ animationDelay: `${idx * 50}ms` }}
                 >
                   {message.role === "assistant" && (
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#0066CC] to-[#00A86B] shadow-sm">
+                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#0066CC] to-[#00A86B] shadow-md">
                       <MedReadyLogo size="sm" showText={false} className="h-4 w-4 text-white" />
                     </div>
                   )}
                   <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                    className={`max-w-[80%] rounded-2xl px-5 py-4 transition-all duration-200 ${
                       message.role === "user" 
-                        ? "bg-gradient-to-r from-[#0066CC] to-[#0052A3] text-white shadow-lg" 
-                        : "bg-muted/50 border border-border/50 text-foreground shadow-sm"
+                        ? "bg-gradient-to-r from-[#0066CC] to-[#0052A3] text-white shadow-lg hover:shadow-xl" 
+                        : "bg-gradient-to-br from-muted/60 to-muted/40 border border-border/50 text-foreground shadow-md hover:shadow-lg backdrop-blur-sm"
                     }`}
                   >
                     {/* Display thinking if available (only for assistant) */}
@@ -876,6 +973,10 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
                         >
                           {message.content}
                         </ReactMarkdown>
+                        {/* Show typing cursor for streaming assistant messages */}
+                        {message.role === "assistant" && isStreaming && idx === conversation.length - 1 && (
+                          <span className="inline-block w-1.5 h-4 ml-0.5 bg-[#0066CC] animate-pulse" />
+                        )}
                       </div>
                             
                     {/* Display sources bar if available */}
@@ -884,7 +985,7 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
                     )}
                   </div>
                   {message.role === "user" && (
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#0066CC] to-[#0052A3] shadow-sm">
+                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#0066CC] to-[#0052A3] shadow-md">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
@@ -907,10 +1008,17 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
                   <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#0066CC] to-[#00A86B] shadow-sm">
                     <MedReadyLogo size="sm" showText={false} className="h-4 w-4 text-white animate-pulse" />
                   </div>
-                  <div className="flex items-center gap-1 rounded-2xl bg-muted/50 border border-border/50 px-4 py-3 shadow-sm">
-                    <div className="h-2 w-2 animate-bounce rounded-full bg-[#0066CC] [animation-delay:-0.3s]" />
-                    <div className="h-2 w-2 animate-bounce rounded-full bg-[#00A86B] [animation-delay:-0.15s]" />
-                    <div className="h-2 w-2 animate-bounce rounded-full bg-[#0066CC]" />
+                  <div className="max-w-[80%] space-y-2">
+                    <div className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-blue-50 to-emerald-50 dark:from-blue-950/30 dark:to-emerald-950/30 border border-blue-200 dark:border-blue-800/50 px-4 py-3 shadow-sm">
+                      <div className="flex items-center gap-1.5">
+                        <div className="h-2 w-2 animate-bounce rounded-full bg-[#0066CC] [animation-delay:-0.3s]" />
+                        <div className="h-2 w-2 animate-bounce rounded-full bg-[#00A86B] [animation-delay:-0.15s]" />
+                        <div className="h-2 w-2 animate-bounce rounded-full bg-[#0066CC]" />
+                      </div>
+                      <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                        {extendedThinking ? "Thinking deeply..." : "Generating response..."}
+                      </span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -932,40 +1040,52 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
                   className="pr-12 h-12 rounded-xl border-border/50 bg-background/50 backdrop-blur-sm focus:bg-background transition-all duration-200"
                 />
               </div>
-              <Button 
-                type="submit" 
-                disabled={isLoading || !input.trim()}
-                className="h-12 px-6 bg-gradient-to-r from-[#0066CC] to-[#00A86B] hover:from-[#0052A3] hover:to-[#008F5A] text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4 animate-spin"
-                  >
-                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                  </svg>
-                ) : (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4"
-                  >
-                    <path d="m22 2-7 20-4-9-9-4Z" />
-                    <path d="M22 2 11 13" />
-                  </svg>
-                )}
-              </Button>
+              
+              {isStreaming ? (
+                <Button 
+                  type="button"
+                  onClick={stopGeneration}
+                  className="h-12 px-6 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg flex items-center gap-2"
+                >
+                  <Square className="h-4 w-4 fill-current" />
+                  <span>Stop</span>
+                </Button>
+              ) : (
+                <Button 
+                  type="submit" 
+                  disabled={isLoading || !input.trim()}
+                  className="h-12 px-6 bg-gradient-to-r from-[#0066CC] to-[#00A86B] hover:from-[#0052A3] hover:to-[#008F5A] text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="h-4 w-4 animate-spin"
+                    >
+                      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                    </svg>
+                  ) : (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="h-4 w-4"
+                    >
+                      <path d="m22 2-7 20-4-9-9-4Z" />
+                      <path d="M22 2 11 13" />
+                    </svg>
+                  )}
+                </Button>
+              )}
             </form>
             <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
               <p>

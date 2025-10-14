@@ -35,8 +35,11 @@ export default async function ChatPage() {
     .order("updated_at", { ascending: false })
 
   // Get the most recent session's messages for initial load
-  const currentSession = chatSessions?.[0]
-  const initialMessages = currentSession?.chat_messages?.sort((a, b) => 
+  // Only set currentSession if it has messages (avoid showing empty "New Chat")
+  const currentSession = chatSessions?.find(session => 
+    session.chat_messages && session.chat_messages.length > 0
+  )
+  const initialMessages = currentSession?.chat_messages?.sort((a: any, b: any) => 
     new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
   ) || []
 

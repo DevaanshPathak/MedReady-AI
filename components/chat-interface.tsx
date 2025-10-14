@@ -104,24 +104,10 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
 
   // Session management functions
   const createNewSession = async () => {
-    try {
-      const { data: newSession, error } = await supabase
-        .from("chat_sessions")
-        .insert({
-          user_id: userId,
-          title: "New Chat",
-        })
-        .select()
-        .single()
-
-      if (error) throw error
-
-      setSessions(prev => [newSession, ...prev])
-      setCurrentSession(newSession.id)
-      setConversation([])
-    } catch (error) {
-      console.error("Error creating new session:", error)
-    }
+    // Simply clear the current session and conversation
+    // A new session will be created only when the user sends their first message
+    setCurrentSession(undefined)
+    setConversation([])
   }
 
   const loadSession = async (sessionId: string) => {
@@ -761,7 +747,11 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
               </div>
             ) : (
               <div className="space-y-1 max-h-80 overflow-y-auto">
-                {sessions.map((session) => (
+                {sessions.filter(session => 
+                  // Only show sessions that have messages or is the current active session
+                  (session.chat_messages && session.chat_messages.length > 0) || 
+                  session.id === currentSession
+                ).map((session) => (
                   <div
                     key={session.id}
                     className={`group relative rounded-lg transition-all duration-200 ${

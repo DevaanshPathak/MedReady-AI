@@ -292,7 +292,7 @@ export default function HomePage() {
                 </Reveal>
                 <Reveal as="ul" className="grid gap-4 sm:grid-cols-2" delay="md">
                   {heroHighlights.map(({ title, description, icon: Icon }) => (
-                    <li key={title} className="rounded-xl border border-border bg-background/80 p-5 shadow-sm">
+                    <li key={title} className="rounded-lg border border-border bg-background p-4">
                       <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
                         <Icon className="size-4" />
                       </div>
@@ -313,7 +313,7 @@ export default function HomePage() {
                 </div>
                 <div className="space-y-5">
                   {heroSnapshot.map(({ title, value, trend, icon: Icon, accent }) => (
-                    <div key={title} className="flex items-start justify-between rounded-xl border border-border/70 bg-card/80 p-4">
+                    <div key={title} className="flex items-start justify-between rounded-lg border border-border bg-card p-4">
                       <div>
                         <p className="text-sm font-medium text-muted-foreground">{title}</p>
                         <p className="mt-1 text-lg font-semibold text-foreground">{value}</p>

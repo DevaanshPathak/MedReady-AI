@@ -166,26 +166,34 @@ export function DashboardNav() {
         </div>
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <Button variant="ghost" onClick={handleSignOut} className="transition-all hover:bg-destructive/10 hover:text-destructive">
-            Sign Out
+          <Button 
+            variant="ghost" 
+            onClick={handleSignOut} 
+            className="transition-all hover:bg-destructive/10 hover:text-destructive"
+            size="sm"
+          >
+            <span className="hidden sm:inline">Sign Out</span>
+            <span className="sm:hidden">Out</span>
           </Button>
         </div>
       </div>
       {/* Mobile Navigation */}
-      <nav className="flex items-center gap-1 overflow-x-auto border-t border-border/40 px-4 py-2 md:hidden backdrop-blur-xl">
+      <nav className="flex items-center gap-1 overflow-x-auto border-t border-border/40 px-2 py-2 md:hidden backdrop-blur-xl scrollbar-hide">
         {navItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
             className={cn(
-              "flex flex-col items-center gap-1 rounded-lg px-3 py-2 text-xs font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground active:scale-95",
+              "flex flex-col items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground active:scale-95 min-w-[60px]",
               pathname === item.href 
                 ? "bg-accent text-accent-foreground shadow-sm" 
                 : "text-muted-foreground hover:shadow-sm",
             )}
           >
-            {item.icon}
-            <span className="whitespace-nowrap">{item.title}</span>
+            <div className="flex items-center justify-center h-5 w-5">
+              {item.icon}
+            </div>
+            <span className="whitespace-nowrap text-[10px]">{item.title}</span>
           </Link>
         ))}
       </nav>

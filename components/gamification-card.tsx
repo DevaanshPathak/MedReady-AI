@@ -106,7 +106,7 @@ export function GamificationCard() {
 
           <TabsContent value="stats" className="space-y-4">
             {/* Rank Badge */}
-            <div className="text-center p-4 rounded-lg bg-gradient-to-r from-primary/10 to-accent/10">
+            <div className="text-center p-4 rounded-lg bg-muted/50 border border-border">
               <div className="text-2xl font-bold">{gamification.rank}</div>
               <div className="text-sm text-muted-foreground">Current Rank</div>
             </div>

@@ -33,7 +33,7 @@ export function MedReadyLogo({ className, showText = true, size = "md" }: MedRea
         />
       </div>
       {showText && (
-        <span className={cn("font-semibold bg-gradient-to-r from-blue-600 to-green-500 bg-clip-text text-transparent drop-shadow-sm", textSizeClasses[size])}>
+        <span className={cn("font-semibold text-foreground", textSizeClasses[size])}>
           MedReady AI
         </span>
       )}

@@ -750,10 +750,10 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
       {/* Main Chat Area */}
       <div className="flex flex-1 flex-col h-full bg-background">
         {/* Chat Header */}
-        <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="border-b bg-background">
           <div className="flex items-center justify-between px-6 py-4">
             <div className="flex items-center gap-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-[#0066CC] to-[#00A86B]">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
                 <MedReadyLogo size="sm" showText={false} className="h-5 w-5 text-white" />
               </div>
               <div>

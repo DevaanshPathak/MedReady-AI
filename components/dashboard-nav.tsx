@@ -193,7 +193,7 @@ export function DashboardNav() {
             <div className="flex items-center justify-center h-5 w-5">
               {item.icon}
             </div>
-            <span className="whitespace-nowrap text-[10px]">{item.title}</span>
+            <span className="whitespace-nowrap text-[11px]">{item.title}</span>
           </Link>
         ))}
       </nav>

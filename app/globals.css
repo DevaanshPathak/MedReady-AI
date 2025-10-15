@@ -129,21 +129,22 @@ button, a {
     min-width: 44px;
   }
   
-  /* Better spacing for mobile cards */
-  .card {
-    padding: 1rem;
+  /* Stack form layouts */
+  form {
+    width: 100%;
   }
   
-  /* Horizontal scroll for tables */
-  table {
+  /* Responsive table wrapper - apply .table-responsive class to parent div */
+  .table-responsive {
     display: block;
+    width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
   
-  /* Stack form layouts */
-  form {
+  .table-responsive > table {
     width: 100%;
+    min-width: 100%;
   }
 }
 

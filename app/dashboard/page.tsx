@@ -52,19 +52,19 @@ export default async function DashboardPage() {
   return (
     <div className="min-h-screen bg-background">
       <DashboardNav />
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <Reveal as="h1" className="text-3xl font-bold tracking-tight" variant="down">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        <div className="mb-6 sm:mb-8">
+          <Reveal as="h1" className="text-2xl sm:text-3xl font-bold tracking-tight" variant="down">
             Welcome back, {profile?.full_name || "Healthcare Worker"}
           </Reveal>
-          <Reveal as="p" className="text-muted-foreground" delay="xs">
+          <Reveal as="p" className="text-sm sm:text-base text-muted-foreground mt-1" delay="xs">
             Continue your learning journey and track your progress
           </Reveal>
         </div>
 
         {/* Emergency Alerts */}
         {alerts && alerts.length > 0 && (
-          <div className="mb-8 space-y-3">
+          <div className="mb-6 sm:mb-8 space-y-2 sm:space-y-3">
             {alerts.map((alert, index) => (
               <Reveal
                 key={alert.id}
@@ -73,13 +73,13 @@ export default async function DashboardPage() {
               >
                 <div
                   className={cn(
-                    "rounded-lg border p-4",
+                    "rounded-lg border p-3 sm:p-4",
                     alert.severity === "critical" && "border-destructive bg-destructive/10",
                     alert.severity === "warning" && "border-[hsl(var(--alert-orange))] bg-[hsl(var(--alert-orange))]/10",
                     alert.severity === "info" && "border-primary bg-primary/10",
                   )}
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-2 sm:gap-3">
                   <div className="mt-0.5">
                     {alert.severity === "critical" && (
                       <svg
@@ -90,7 +90,7 @@ export default async function DashboardPage() {
                         strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        className="h-5 w-5 text-destructive"
+                        className="h-4 w-4 sm:h-5 sm:w-5 text-destructive flex-shrink-0"
                       >
                         <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
                         <path d="M12 9v4" />
@@ -106,7 +106,7 @@ export default async function DashboardPage() {
                         strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        className="h-5 w-5 text-[hsl(var(--alert-orange))]"
+                        className="h-4 w-4 sm:h-5 sm:w-5 text-[hsl(var(--alert-orange))] flex-shrink-0"
                       >
                         <circle cx="12" cy="12" r="10" />
                         <path d="M12 8v4" />
@@ -122,7 +122,7 @@ export default async function DashboardPage() {
                         strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        className="h-5 w-5 text-primary"
+                        className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0"
                       >
                         <circle cx="12" cy="12" r="10" />
                         <path d="M12 16v-4" />
@@ -130,11 +130,11 @@ export default async function DashboardPage() {
                       </svg>
                     )}
                   </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold">{alert.title}</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">{alert.description}</p>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm sm:text-base font-semibold">{alert.title}</h3>
+                    <p className="mt-1 text-xs sm:text-sm text-muted-foreground">{alert.description}</p>
                     {alert.action_required && (
-                      <p className="mt-2 text-sm font-medium">Action Required: {alert.action_required}</p>
+                      <p className="mt-2 text-xs sm:text-sm font-medium">Action Required: {alert.action_required}</p>
                     )}
                   </div>
                 </div>
@@ -145,7 +145,7 @@ export default async function DashboardPage() {
         )}
 
         {/* Gamification and Streaks Row */}
-        <div className="grid gap-6 md:grid-cols-2 mb-8">
+        <div className="grid gap-4 sm:gap-6 md:grid-cols-2 mb-6 sm:mb-8">
           <Reveal delay="none">
             <StudyStreakCard />
           </Reveal>
@@ -155,7 +155,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Quick Stats */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
           <Reveal delay="none">
             <Card>
             <CardHeader>
@@ -163,7 +163,7 @@ export default async function DashboardPage() {
               <CardDescription>Your overall completion rate</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-4xl font-bold text-primary">
+              <div className="text-3xl sm:text-4xl font-bold text-primary">
                 {progressData && progressData.length > 0
                   ? Math.round(progressData.reduce((acc, p) => acc + p.completion_percent, 0) / progressData.length)
                   : 0}
@@ -181,7 +181,7 @@ export default async function DashboardPage() {
               <CardDescription>Earned credentials</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-4xl font-bold text-accent">0</div>
+              <div className="text-3xl sm:text-4xl font-bold text-accent">0</div>
               <p className="mt-2 text-sm text-muted-foreground">Complete modules to earn certificates</p>
             </CardContent>
           </Card>
@@ -194,7 +194,7 @@ export default async function DashboardPage() {
               <CardDescription>Your latest quiz attempts</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-4xl font-bold text-accent">{recentAttempts?.length || 0}</div>
+              <div className="text-3xl sm:text-4xl font-bold text-accent">{recentAttempts?.length || 0}</div>
               <p className="mt-2 text-sm text-muted-foreground">
                 {recentAttempts && recentAttempts.length > 0 ? (
                   <Link href="/learn/history" className="text-primary hover:underline">
@@ -210,7 +210,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Weak Areas and Recommendations Row */}
-        <div className="grid gap-6 md:grid-cols-2 mt-8">
+        <div className="grid gap-4 sm:gap-6 md:grid-cols-2 mt-6 sm:mt-8">
           <Reveal delay="md">
             <WeakAreasCard />
           </Reveal>
@@ -220,14 +220,14 @@ export default async function DashboardPage() {
         </div>
 
         {/* Continue Learning */}
-        <div className="mt-8">
-          <Reveal className="mb-4 flex items-center justify-between" delay="md">
-            <h2 className="text-2xl font-bold tracking-tight">Continue Learning</h2>
-            <Button asChild variant="outline">
-              <Link href="/learn">View All Modules</Link>
+        <div className="mt-6 sm:mt-8">
+          <Reveal className="mb-4 flex items-center justify-between gap-2" delay="md">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Continue Learning</h2>
+            <Button asChild variant="outline" size="sm" className="flex-shrink-0">
+              <Link href="/learn" className="text-xs sm:text-sm">View All</Link>
             </Button>
           </Reveal>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
             {progressData && progressData.length > 0 ? (
               progressData.map((progress, index) => (
                 <Reveal

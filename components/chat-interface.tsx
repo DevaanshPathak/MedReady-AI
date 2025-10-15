@@ -6,16 +6,18 @@ import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { createClient } from "@/lib/supabase/client"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { useTheme } from "next-themes"
-import { Copy, Check, X, Square } from "lucide-react"
+import { Copy, Check, X, Square, Menu } from "lucide-react"
 import { MedReadyLogo } from "@/components/medready-logo"
 import { SourcesBar } from "@/components/sources-bar"
 import { useChat } from '@ai-sdk/react'
+import { useIsMobile } from "@/hooks/use-mobile"
 
 interface ChatInterfaceProps {
   userId: string
@@ -628,10 +630,11 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
     )
   }
 
-  return (
-    <div className="flex w-full h-full">
-      {/* Sidebar */}
-      <div className="hidden w-80 flex-col border-r bg-muted/30 lg:flex">
+  const isMobile = useIsMobile()
+
+  const SidebarContent = () => (
+    <>
+      <div className="flex flex-col gap-4 p-4">
         <div className="flex flex-col gap-4 p-4">
           {/* Knowledge Categories */}
           <div className="space-y-3">
@@ -746,34 +749,56 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
           </div>
         </div>
       </div>
+    </>
+  )
+
+  return (
+    <div className="flex w-full h-full">
+      {/* Desktop Sidebar */}
+      <div className="hidden w-80 flex-col border-r bg-muted/30 lg:flex">
+        <SidebarContent />
+      </div>
 
       {/* Main Chat Area */}
       <div className="flex flex-1 flex-col h-full bg-background">
         {/* Chat Header */}
         <div className="border-b bg-background">
-          <div className="flex items-center justify-between px-6 py-4">
-            <div className="flex items-center gap-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
+          <div className="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4">
+            <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
+              {/* Mobile Menu Trigger */}
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="lg:hidden flex-shrink-0">
+                    <Menu className="h-5 w-5" />
+                    <span className="sr-only">Open menu</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[280px] p-0">
+                  <SidebarContent />
+                </SheetContent>
+              </Sheet>
+              
+              <div className="hidden sm:flex h-10 w-10 items-center justify-center rounded-lg bg-primary flex-shrink-0">
                 <MedReadyLogo size="sm" showText={false} className="h-5 w-5 text-white" />
               </div>
-              <div>
-                <h1 className="text-lg font-semibold text-foreground">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-base sm:text-lg font-semibold text-foreground truncate">
                   {sessions.find(s => s.id === currentSession)?.title || "MedReady AI Assistant"}
                 </h1>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
                   Ask medical questions, check protocols, or search drug interactions
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <Badge variant="secondary" className="px-3 py-1">
+            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+              <Badge variant="secondary" className="hidden sm:flex px-2 sm:px-3 py-1 text-xs">
                 {selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}
               </Badge>
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-border bg-background/50">
-                <svg className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="hidden sm:flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-md border border-border bg-background/50">
+                <svg className="h-3 sm:h-4 w-3 sm:w-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                 </svg>
-                <span className="text-xs font-medium text-muted-foreground">Thinking</span>
+                <span className="hidden md:inline text-xs font-medium text-muted-foreground">Thinking</span>
                 <button
                   onClick={() => setExtendedThinking(!extendedThinking)}
                   className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
@@ -794,15 +819,15 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
         {/* Messages Area */}
         <div className="flex-1 overflow-y-auto">
           {conversation.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center text-center px-6 py-12">
-              <div className="mb-8 max-w-md">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted border border-border mx-auto mb-6">
-                  <MedReadyLogo size="lg" showText={false} className="h-6 w-6 text-primary" />
+            <div className="flex h-full flex-col items-center justify-center text-center px-4 sm:px-6 py-8 sm:py-12">
+              <div className="mb-6 sm:mb-8 max-w-md">
+                <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg bg-muted border border-border mx-auto mb-4 sm:mb-6">
+                  <MedReadyLogo size="lg" showText={false} className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                 </div>
-                <h3 className="mb-3 text-xl font-semibold text-foreground">
+                <h3 className="mb-2 sm:mb-3 text-lg sm:text-xl font-semibold text-foreground">
                   Welcome to MedReady AI
                 </h3>
-                <p className="mb-6 text-sm text-muted-foreground leading-relaxed">
+                <p className="mb-4 sm:mb-6 text-xs sm:text-sm text-muted-foreground leading-relaxed">
                   Your AI-powered medical knowledge assistant. Ask questions about protocols, treatments, drug
                   interactions, and more.
                 </p>
@@ -812,19 +837,19 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
               </div>
             </div>
           ) : (
-            <div className="px-6 py-6 space-y-6">
+            <div className="px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
               {conversation.map((message, idx) => (
                 <div
                   key={message.id}
-                  className={`flex gap-4 ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                  className={`flex gap-2 sm:gap-4 ${message.role === "user" ? "justify-end" : "justify-start"}`}
                 >
                   {message.role === "assistant" && (
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-muted border border-border">
-                      <MedReadyLogo size="sm" showText={false} className="h-4 w-4 text-primary" />
+                    <div className="flex h-6 w-6 sm:h-8 sm:w-8 flex-shrink-0 items-center justify-center rounded-md bg-muted border border-border">
+                      <MedReadyLogo size="sm" showText={false} className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                     </div>
                   )}
                   <div
-                    className={`max-w-[80%] rounded-lg px-4 py-3 ${
+                    className={`max-w-[85%] sm:max-w-[80%] rounded-lg px-3 sm:px-4 py-2 sm:py-3 ${
                       message.role === "user" 
                         ? "bg-primary text-primary-foreground" 
                         : "bg-muted border border-border text-foreground"
@@ -917,7 +942,7 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
                     )}
                   </div>
                   {message.role === "user" && (
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-primary border border-primary">
+                    <div className="flex h-6 w-6 sm:h-8 sm:w-8 flex-shrink-0 items-center justify-center rounded-md bg-primary border border-primary">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
@@ -926,7 +951,7 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
                         strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        className="h-4 w-4 text-primary-foreground"
+                        className="h-3 w-3 sm:h-4 sm:w-4 text-primary-foreground"
                       >
                         <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
                         <circle cx="12" cy="7" r="4" />
@@ -936,18 +961,18 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
                 </div>
               ))}
               {isLoading && (
-                <div className="flex gap-4 justify-start">
-                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-muted border border-border">
-                    <MedReadyLogo size="sm" showText={false} className="h-4 w-4 text-primary animate-pulse" />
+                <div className="flex gap-2 sm:gap-4 justify-start">
+                  <div className="flex h-6 w-6 sm:h-8 sm:w-8 flex-shrink-0 items-center justify-center rounded-md bg-muted border border-border">
+                    <MedReadyLogo size="sm" showText={false} className="h-3 w-3 sm:h-4 sm:w-4 text-primary animate-pulse" />
                   </div>
-                  <div className="max-w-[80%]">
-                    <div className="flex items-center gap-3 rounded-lg bg-muted border border-border px-4 py-3">
+                  <div className="max-w-[85%] sm:max-w-[80%]">
+                    <div className="flex items-center gap-2 sm:gap-3 rounded-lg bg-muted border border-border px-3 sm:px-4 py-2 sm:py-3">
                       <div className="flex items-center gap-1.5">
                         <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
                         <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse [animation-delay:0.2s]" />
                         <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse [animation-delay:0.4s]" />
                       </div>
-                      <span className="text-sm text-muted-foreground">
+                      <span className="text-xs sm:text-sm text-muted-foreground">
                         {extendedThinking ? "Thinking..." : "Generating..."}
                       </span>
                     </div>
@@ -961,15 +986,15 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
 
         {/* Input Area */}
         <div className="border-t bg-background">
-          <div className="px-6 py-4">
-            <form onSubmit={handleFormSubmit} className="flex gap-3">
+          <div className="px-3 sm:px-6 py-3 sm:py-4">
+            <form onSubmit={handleFormSubmit} className="flex gap-2 sm:gap-3">
               <div className="flex-1 relative">
                 <Input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Ask a medical question..."
                   disabled={isLoading}
-                  className="h-10"
+                  className="h-10 sm:h-11 text-sm sm:text-base"
                 />
               </div>
               
@@ -978,16 +1003,17 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
                   type="button"
                   onClick={stopGeneration}
                   variant="destructive"
-                  className="h-10 px-4 flex items-center gap-2"
+                  className="h-10 sm:h-11 px-3 sm:px-4 flex items-center gap-2"
                 >
                   <Square className="h-4 w-4" />
-                  <span>Stop</span>
+                  <span className="hidden sm:inline">Stop</span>
                 </Button>
               ) : (
                 <Button 
                   type="submit" 
                   disabled={isLoading || !input.trim()}
-                  className="h-10 px-4"
+                  className="h-10 sm:h-11 px-3 sm:px-4"
+                  size="icon"
                 >
                   {isLoading ? (
                     <svg
@@ -1020,7 +1046,7 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
                 </Button>
               )}
             </form>
-            <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
+            <div className="mt-2 sm:mt-3 flex items-center justify-between text-xs text-muted-foreground">
               <p>
                 AI responses are for educational purposes. Always verify critical information and follow local protocols.
               </p>

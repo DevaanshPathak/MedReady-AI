@@ -497,43 +497,25 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
     )
   }
 
-  // Component to display thinking process with enhanced UI
+  // Component to display thinking process
   const ThinkingBlock = ({ thinking }: { thinking: string }) => {
     const [isExpanded, setIsExpanded] = useState(false)
-    const isThinking = thinking && thinking.length > 0
     
     return (
-      <div className="my-3 overflow-hidden rounded-xl border border-purple-200 dark:border-purple-800/50 bg-gradient-to-br from-purple-50/80 to-purple-100/50 dark:from-purple-950/30 dark:to-purple-900/20 shadow-sm">
+      <div className="my-2 overflow-hidden rounded-md border border-border bg-muted/50">
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="flex w-full items-center justify-between px-4 py-3 text-sm hover:bg-purple-100/50 dark:hover:bg-purple-900/30 transition-all duration-200"
+          className="flex w-full items-center justify-between px-3 py-2 text-sm hover:bg-muted transition-colors"
         >
-          <div className="flex items-center gap-3">
-            {/* Animated thinking icon */}
-            <div className="relative">
-              <svg className="h-5 w-5 text-purple-600 dark:text-purple-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-              </svg>
-              {isThinking && (
-                <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-purple-500"></span>
-                </span>
-              )}
-            </div>
-            
-            <div className="text-left">
-              <span className="font-semibold text-purple-900 dark:text-purple-100">
-                Extended Thinking
-              </span>
-              <div className="text-xs text-purple-600 dark:text-purple-400 mt-0.5">
-                {thinking.split(' ').length} words • {thinking.length} characters
-              </div>
-            </div>
+          <div className="flex items-center gap-2">
+            <svg className="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+            <span className="font-medium text-foreground">Thinking Process</span>
           </div>
           
           <svg
-            className={`h-4 w-4 text-purple-600 dark:text-purple-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+            className={`h-4 w-4 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -542,8 +524,8 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
           </svg>
         </button>
         {isExpanded && (
-          <div className="border-t border-purple-200 dark:border-purple-800/50 bg-white/50 dark:bg-purple-950/20 px-4 py-4">
-            <div className="text-sm text-purple-900 dark:text-purple-100 whitespace-pre-wrap font-mono leading-relaxed bg-purple-50/50 dark:bg-purple-900/20 rounded-lg p-3 border border-purple-100 dark:border-purple-800/30">
+          <div className="border-t border-border bg-background px-3 py-2">
+            <div className="text-xs text-muted-foreground whitespace-pre-wrap font-mono leading-relaxed">
               {thinking}
             </div>
           </div>
@@ -552,68 +534,44 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
     )
   }
 
-  // Component to display tool calls with enhanced streaming UI
+  // Component to display tool calls
   const ToolCallsBlock = ({ toolCalls }: { toolCalls: Array<{ toolName: string; args: any; result?: any; timestamp: string }> }) => {
     const [expandedIndex, setExpandedIndex] = useState<number | null>(null)
     
     return (
-      <div className="my-3 space-y-2">
+      <div className="my-2 space-y-2">
         {toolCalls.map((tool, index) => {
           const isSearching = !tool.result
           const searchResults = Array.isArray(tool.result) ? tool.result : []
           
           return (
-            <div key={index} className="overflow-hidden rounded-xl border border-blue-200 dark:border-blue-800/50 bg-gradient-to-br from-blue-50/80 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/20 shadow-sm">
+            <div key={index} className="overflow-hidden rounded-md border border-border bg-muted/50">
               <button
                 onClick={() => setExpandedIndex(expandedIndex === index ? null : index)}
-                className="flex w-full items-center justify-between px-4 py-3 text-sm hover:bg-blue-100/50 dark:hover:bg-blue-900/30 transition-all duration-200"
+                className="flex w-full items-center justify-between px-3 py-2 text-sm hover:bg-muted transition-colors"
               >
-                <div className="flex items-center gap-3">
-                  {/* Animated search icon */}
-                  <div className={`relative ${isSearching ? 'animate-pulse' : ''}`}>
-                    <svg className="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    {isSearching && (
-                      <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
-                      </span>
-                    )}
-                  </div>
+                <div className="flex items-center gap-2">
+                  <svg className="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
                   
                   <div className="text-left">
-                    <div className="font-semibold text-blue-900 dark:text-blue-100 flex items-center gap-2">
-                      {tool.toolName === 'medicalWebSearch' ? '🔍 Medical Web Search' : tool.toolName}
+                    <div className="font-medium text-foreground flex items-center gap-2">
+                      {tool.toolName === 'medicalWebSearch' ? 'Medical Web Search' : tool.toolName}
                       {!isSearching && searchResults.length > 0 && (
-                        <span className="text-xs font-normal px-2 py-0.5 rounded-full bg-blue-200 dark:bg-blue-800 text-blue-700 dark:text-blue-300">
-                          {searchResults.length} {searchResults.length === 1 ? 'source' : 'sources'}
+                        <span className="text-xs font-normal text-muted-foreground">
+                          ({searchResults.length})
                         </span>
                       )}
                     </div>
-                    <div className="text-xs text-blue-700 dark:text-blue-300 mt-0.5">
+                    <div className="text-xs text-muted-foreground mt-0.5">
                       {tool.args?.query || 'Searching...'}
                     </div>
                   </div>
-                  
-                  {/* Status badge */}
-                  {isSearching ? (
-                    <span className="text-xs px-2.5 py-1 rounded-full bg-gradient-to-r from-yellow-100 to-amber-100 dark:from-yellow-900/40 dark:to-amber-900/40 text-yellow-700 dark:text-yellow-300 flex items-center gap-1.5 font-medium shadow-sm">
-                      <span className="inline-flex h-1.5 w-1.5 rounded-full bg-yellow-500 animate-pulse" />
-                      Searching...
-                    </span>
-                  ) : (
-                    <span className="text-xs px-2.5 py-1 rounded-full bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/40 dark:to-emerald-900/40 text-green-700 dark:text-green-300 flex items-center gap-1.5 font-medium shadow-sm">
-                      <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      Complete
-                    </span>
-                  )}
                 </div>
                 
                 <svg
-                  className={`h-4 w-4 text-blue-600 dark:text-blue-400 transition-transform duration-200 ${expandedIndex === index ? 'rotate-180' : ''}`}
+                  className={`h-4 w-4 text-muted-foreground transition-transform ${expandedIndex === index ? 'rotate-180' : ''}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -623,18 +581,18 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
               </button>
               
               {expandedIndex === index && tool.result && (
-                <div className="border-t border-blue-200 dark:border-blue-800/50 bg-white/50 dark:bg-blue-950/20">
-                  <div className="px-4 py-4 space-y-3">
+                <div className="border-t border-border bg-background">
+                  <div className="px-3 py-2 space-y-2">
                     {searchResults.length > 0 ? (
-                      <div className="space-y-3">
+                      <div className="space-y-2">
                         {searchResults.map((item: any, i: number) => (
-                          <div key={i} className="group p-3 rounded-lg bg-white dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800/30 hover:border-blue-300 dark:hover:border-blue-600 transition-all duration-200 hover:shadow-md">
-                            <div className="flex items-start justify-between gap-3 mb-2">
-                              <h4 className="font-semibold text-sm text-blue-900 dark:text-blue-100 flex-1 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors">
+                          <div key={i} className="p-2 rounded-md border border-border hover:border-muted-foreground/30 transition-colors">
+                            <div className="flex items-start justify-between gap-2 mb-1">
+                              <h4 className="font-medium text-xs text-foreground flex-1">
                                 {item.title}
                               </h4>
                               {item.publishedDate && (
-                                <span className="text-xs text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                                <span className="text-xs text-muted-foreground whitespace-nowrap">
                                   {new Date(item.publishedDate).toLocaleDateString()}
                                 </span>
                               )}
@@ -643,35 +601,20 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
                               href={item.url} 
                               target="_blank" 
                               rel="noopener noreferrer"
-                              className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 hover:underline flex items-center gap-1 mb-2 group/link"
+                              className="text-xs text-primary hover:underline flex items-center gap-1 mb-1"
                             >
                               <span className="truncate max-w-md">{item.url}</span>
-                              <svg className="h-3 w-3 flex-shrink-0 opacity-0 group-hover/link:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                              </svg>
                             </a>
                             {item.content && (
-                              <p className="text-xs text-blue-800 dark:text-blue-200 leading-relaxed line-clamp-3">
-                                {item.content.slice(0, 200)}{item.content.length > 200 ? '...' : ''}
+                              <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                                {item.content.slice(0, 150)}{item.content.length > 150 ? '...' : ''}
                               </p>
-                            )}
-                            {item.highlights && item.highlights.length > 0 && (
-                              <div className="mt-2 pt-2 border-t border-blue-100 dark:border-blue-800/30">
-                                <div className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">Key Highlights:</div>
-                                <div className="space-y-1">
-                                  {item.highlights.slice(0, 2).map((highlight: string, hi: number) => (
-                                    <div key={hi} className="text-xs text-blue-600 dark:text-blue-400 italic">
-                                      "...{highlight}..."
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
                             )}
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-4 text-sm text-blue-600 dark:text-blue-400">
+                      <div className="text-center py-2 text-xs text-muted-foreground">
                         No results found
                       </div>
                     )}
@@ -707,10 +650,10 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
                 <button
                   key={category.id}
                   onClick={() => setSelectedCategory(category.id)}
-                  className={`w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-all duration-200 ${
+                  className={`w-full flex items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors ${
                     selectedCategory === category.id
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-foreground/70 hover:bg-accent hover:text-accent-foreground"
+                      ? "bg-muted text-foreground font-medium"
+                      : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                   }`}
                 >
                   <span className="text-base">{category.icon}</span>
@@ -852,19 +795,19 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
         <div className="flex-1 overflow-y-auto">
           {conversation.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center text-center px-6 py-12">
-              <div className="mb-8">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0066CC] to-[#00A86B] mx-auto mb-4">
-                  <MedReadyLogo size="lg" showText={false} className="h-8 w-8 text-white" />
+              <div className="mb-8 max-w-md">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted border border-border mx-auto mb-6">
+                  <MedReadyLogo size="lg" showText={false} className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="mb-3 text-2xl font-semibold bg-gradient-to-r from-[#0066CC] to-[#00A86B] bg-clip-text text-transparent">
+                <h3 className="mb-3 text-xl font-semibold text-foreground">
                   Welcome to MedReady AI
                 </h3>
-                <p className="mb-8 max-w-md text-muted-foreground leading-relaxed">
+                <p className="mb-6 text-sm text-muted-foreground leading-relaxed">
                   Your AI-powered medical knowledge assistant. Ask questions about protocols, treatments, drug
-                  interactions, and more. Start typing below to begin!
+                  interactions, and more.
                 </p>
-                <div className="text-sm text-muted-foreground/70 italic">
-                  💡 Your chat will be automatically titled based on your first message
+                <div className="text-xs text-muted-foreground">
+                  Your chat will be automatically titled based on your first message
                 </div>
               </div>
             </div>
@@ -873,19 +816,18 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
               {conversation.map((message, idx) => (
                 <div
                   key={message.id}
-                  className={`flex gap-4 ${message.role === "user" ? "justify-end" : "justify-start"} animate-in fade-in slide-in-from-bottom-2 duration-500`}
-                  style={{ animationDelay: `${idx * 50}ms` }}
+                  className={`flex gap-4 ${message.role === "user" ? "justify-end" : "justify-start"}`}
                 >
                   {message.role === "assistant" && (
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#0066CC] to-[#00A86B] shadow-md">
-                      <MedReadyLogo size="sm" showText={false} className="h-4 w-4 text-white" />
+                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-muted border border-border">
+                      <MedReadyLogo size="sm" showText={false} className="h-4 w-4 text-primary" />
                     </div>
                   )}
                   <div
-                    className={`max-w-[80%] rounded-2xl px-5 py-4 transition-all duration-200 ${
+                    className={`max-w-[80%] rounded-lg px-4 py-3 ${
                       message.role === "user" 
-                        ? "bg-gradient-to-r from-[#0066CC] to-[#0052A3] text-white shadow-lg hover:shadow-xl" 
-                        : "bg-gradient-to-br from-muted/60 to-muted/40 border border-border/50 text-foreground shadow-md hover:shadow-lg backdrop-blur-sm"
+                        ? "bg-primary text-primary-foreground" 
+                        : "bg-muted border border-border text-foreground"
                     }`}
                   >
                     {/* Display thinking if available (only for assistant) */}
@@ -975,7 +917,7 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
                     )}
                   </div>
                   {message.role === "user" && (
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#0066CC] to-[#0052A3] shadow-md">
+                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-primary border border-primary">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
@@ -984,7 +926,7 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
                         strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        className="h-4 w-4 text-white"
+                        className="h-4 w-4 text-primary-foreground"
                       >
                         <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
                         <circle cx="12" cy="7" r="4" />
@@ -995,18 +937,18 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
               ))}
               {isLoading && (
                 <div className="flex gap-4 justify-start">
-                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#0066CC] to-[#00A86B] shadow-sm">
-                    <MedReadyLogo size="sm" showText={false} className="h-4 w-4 text-white animate-pulse" />
+                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-muted border border-border">
+                    <MedReadyLogo size="sm" showText={false} className="h-4 w-4 text-primary animate-pulse" />
                   </div>
-                  <div className="max-w-[80%] space-y-2">
-                    <div className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-blue-50 to-emerald-50 dark:from-blue-950/30 dark:to-emerald-950/30 border border-blue-200 dark:border-blue-800/50 px-4 py-3 shadow-sm">
+                  <div className="max-w-[80%]">
+                    <div className="flex items-center gap-3 rounded-lg bg-muted border border-border px-4 py-3">
                       <div className="flex items-center gap-1.5">
-                        <div className="h-2 w-2 animate-bounce rounded-full bg-[#0066CC] [animation-delay:-0.3s]" />
-                        <div className="h-2 w-2 animate-bounce rounded-full bg-[#00A86B] [animation-delay:-0.15s]" />
-                        <div className="h-2 w-2 animate-bounce rounded-full bg-[#0066CC]" />
+                        <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                        <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse [animation-delay:0.2s]" />
+                        <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse [animation-delay:0.4s]" />
                       </div>
-                      <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                        {extendedThinking ? "Thinking deeply..." : "Generating response..."}
+                      <span className="text-sm text-muted-foreground">
+                        {extendedThinking ? "Thinking..." : "Generating..."}
                       </span>
                     </div>
                   </div>
@@ -1018,7 +960,7 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
         </div>
 
         {/* Input Area */}
-        <div className="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="border-t bg-background">
           <div className="px-6 py-4">
             <form onSubmit={handleFormSubmit} className="flex gap-3">
               <div className="flex-1 relative">
@@ -1027,7 +969,7 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Ask a medical question..."
                   disabled={isLoading}
-                  className="pr-12 h-12 rounded-xl border-border/50 bg-background/50 backdrop-blur-sm focus:bg-background transition-all duration-200"
+                  className="h-10"
                 />
               </div>
               
@@ -1035,16 +977,17 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
                 <Button 
                   type="button"
                   onClick={stopGeneration}
-                  className="h-12 px-6 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg flex items-center gap-2"
+                  variant="destructive"
+                  className="h-10 px-4 flex items-center gap-2"
                 >
-                  <Square className="h-4 w-4 fill-current" />
+                  <Square className="h-4 w-4" />
                   <span>Stop</span>
                 </Button>
               ) : (
                 <Button 
                   type="submit" 
                   disabled={isLoading || !input.trim()}
-                  className="h-12 px-6 bg-gradient-to-r from-[#0066CC] to-[#00A86B] hover:from-[#0052A3] hover:to-[#008F5A] text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="h-10 px-4"
                 >
                   {isLoading ? (
                     <svg

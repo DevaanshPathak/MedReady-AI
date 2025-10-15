@@ -100,12 +100,11 @@ body {
   font-feature-settings: 'rlig' 1, 'calt' 1;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Smooth transitions for interactive elements */
-button, a, input, select, textarea {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+/* Minimal transitions for interactive elements */
+button, a {
+  transition: color 0.15s ease, background-color 0.15s ease;
 }
 
 /* Better focus visible styles */
@@ -127,13 +126,11 @@ button, a, input, select, textarea {
 
 .landing-hero {
   position: relative;
-  overflow: hidden;
-  border-radius: calc(var(--radius) * 2);
+  border-radius: var(--radius);
   border: 1px solid var(--color-border);
   background-color: var(--color-card);
   padding-inline: 1.5rem;
   padding-block: 3rem;
-  box-shadow: 0 24px 70px -32px rgba(15, 23, 42, 0.45);
 }
 
 @media (min-width: 640px) {
@@ -151,19 +148,9 @@ button, a, input, select, textarea {
 .landing-hero::before {
   content: "";
   position: absolute;
-  inset: -45% -30% 25% -35%;
-  background: radial-gradient(circle at top left, var(--color-primary) 0%, transparent 55%),
-    radial-gradient(circle at bottom right, var(--color-secondary) 0%, transparent 65%);
-  opacity: 0.24;
-  filter: blur(8px);
-}
-
-.landing-hero::after {
-  content: "";
-  position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, color-mix(in oklch, var(--color-primary), transparent 92%) 0%, transparent 40%, color-mix(in oklch, var(--color-accent), transparent 88%) 100%);
-  mix-blend-mode: screen;
+  background: linear-gradient(135deg, color-mix(in oklch, var(--color-primary), transparent 97%) 0%, transparent 100%);
+  opacity: 0.5;
   pointer-events: none;
 }
 
@@ -172,18 +159,15 @@ button, a, input, select, textarea {
 }
 
 .landing-metric {
-  border-radius: 0.75rem;
-  border: 1px solid color-mix(in oklch, var(--color-border), transparent 30%);
-  background-color: color-mix(in oklch, var(--color-background), transparent 25%);
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-card);
   padding: 1.5rem;
-  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
-  backdrop-filter: blur(8px);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: border-color 0.15s ease;
 }
 
 .landing-metric:hover {
-  transform: translateY(-0.25rem);
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  border-color: var(--color-primary);
 }
 
 .landing-metric strong {
@@ -215,17 +199,15 @@ button, a, input, select, textarea {
   height: 100%;
   flex-direction: column;
   justify-content: space-between;
-  border-radius: 1rem;
+  border-radius: var(--radius);
   border: 1px solid var(--color-border);
   background-color: var(--color-card);
   padding: 2rem;
-  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: border-color 0.15s ease;
 }
 
 .landing-testimonial:hover {
-  transform: translateY(-0.25rem);
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  border-color: var(--color-primary);
 }
 
 .landing-testimonial cite {
@@ -238,12 +220,10 @@ button, a, input, select, textarea {
 
 .landing-step {
   position: relative;
-  overflow: hidden;
-  border-radius: calc(var(--radius) * 2);
+  border-radius: var(--radius);
   border: 1px solid var(--color-border);
   background-color: var(--color-card);
   padding: 2.5rem;
-  box-shadow: 0 12px 45px -30px rgba(15, 23, 42, 0.35);
 }
 
 .landing-step::before {
@@ -261,7 +241,6 @@ button, a, input, select, textarea {
   color: var(--color-primary-foreground);
   font-size: 1.125rem;
   font-weight: 600;
-  box-shadow: 0 15px 35px -20px rgba(0, 102, 204, 0.75);
 }
 
 .landing-partners {
@@ -281,51 +260,39 @@ button, a, input, select, textarea {
   flex-direction: column;
   justify-content: space-between;
   gap: 2rem;
-  border-radius: calc(var(--radius) * 1.5);
+  border-radius: var(--radius);
   border: 1px solid var(--color-border);
-  background-color: color-mix(in oklch, var(--color-background), transparent 20%);
+  background-color: var(--color-card);
   padding: 2rem;
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-  backdrop-filter: blur(8px);
 }
 
 .reveal-element {
-  --reveal-x: 0px;
-  --reveal-y: 24px;
-  --reveal-scale: 1;
+  --reveal-y: 16px;
   --reveal-delay: 0ms;
   opacity: 0;
-  transform: translate3d(var(--reveal-x), var(--reveal-y), 0) scale(var(--reveal-scale));
-  transition-property: opacity, transform;
-  transition-duration: 700ms;
-  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  transform: translateY(var(--reveal-y));
+  transition: opacity 0.4s ease, transform 0.4s ease;
   transition-delay: var(--reveal-delay);
-  will-change: opacity, transform;
 }
 
 .reveal-visible {
   opacity: 1;
-  transform: translate3d(0, 0, 0) scale(1);
+  transform: translateY(0);
 }
 
 .reveal-up {
-  --reveal-y: 32px;
+  --reveal-y: 16px;
 }
 
 .reveal-down {
-  --reveal-y: -32px;
+  --reveal-y: -16px;
 }
 
-.reveal-left {
-  --reveal-x: -32px;
-}
-
-.reveal-right {
-  --reveal-x: 32px;
-}
-
+.reveal-left,
+.reveal-right,
 .reveal-scale {
-  --reveal-scale: 0.96;
+  /* Simplified - all use same minimal animation */
+  --reveal-y: 16px;
 }
 
 .reveal-delay-none {
@@ -333,23 +300,23 @@ button, a, input, select, textarea {
 }
 
 .reveal-delay-xs {
-  --reveal-delay: 80ms;
+  --reveal-delay: 50ms;
 }
 
 .reveal-delay-sm {
-  --reveal-delay: 160ms;
+  --reveal-delay: 100ms;
 }
 
 .reveal-delay-md {
-  --reveal-delay: 240ms;
+  --reveal-delay: 150ms;
 }
 
 .reveal-delay-lg {
-  --reveal-delay: 320ms;
+  --reveal-delay: 200ms;
 }
 
 .reveal-delay-xl {
-  --reveal-delay: 400ms;
+  --reveal-delay: 250ms;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -370,33 +337,17 @@ button, a, input, select, textarea {
   display: none;  /* Safari and Chrome */
 }
 
-/* Smooth fade-in and slide-in animations for chat messages */
+/* Minimal animations for chat messages */
 @keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-@keyframes slide-in-from-bottom {
-  from {
-    transform: translateY(8px);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
-
-.animate-in {
-  animation: fade-in 0.3s ease-out, slide-in-from-bottom 0.3s ease-out;
-}
-
+.animate-in,
 .fade-in {
-  animation: fade-in 0.3s ease-out;
+  animation: fade-in 0.2s ease;
 }
 
 .slide-in-from-bottom-2 {
-  animation: slide-in-from-bottom 0.3s ease-out;
+  animation: fade-in 0.2s ease;
 }

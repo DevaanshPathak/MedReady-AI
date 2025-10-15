@@ -369,7 +369,7 @@ export default function HomePage() {
             <div className="mx-auto mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {featureHighlights.map(({ title, description, icon: Icon, accentClass }) => (
                 <Reveal key={title} variant="up" className="h-full" delay="sm">
-                  <Card className="h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                  <Card className="h-full">
                     <CardHeader className="gap-4">
                       <div className={cn("landing-feature-icon", accentClass)}>
                         <Icon className="size-6" />
@@ -397,7 +397,7 @@ export default function HomePage() {
           <div className="mt-12 grid gap-8 lg:grid-cols-3">
             {platformPillars.map(({ title, summary, bullets, icon: Icon }) => (
               <Reveal key={title} variant="up" className="h-full" delay="sm">
-                <Card className="h-full border border-border/80 bg-card/95 shadow-lg">
+                <Card className="h-full">
                   <CardHeader className="gap-4">
                     <div className="landing-feature-icon">
                       <Icon className="size-6" />

@@ -8,6 +8,7 @@ import {
   GraduationCap,
   HeartPulse,
   MapPinned,
+  Menu,
   RadioReceiver,
   ShieldCheck,
   Sparkles,
@@ -20,6 +21,7 @@ import { MedReadyLogo } from "@/components/medready-logo"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { cn } from "@/lib/utils"
 
@@ -251,15 +253,63 @@ export default function HomePage() {
               Impact
             </Link>
           </Reveal>
-          <Reveal as="div" className="flex items-center gap-2" variant="right" delay="xs">
+          <Reveal as="div" className="hidden md:flex items-center gap-2" variant="right" delay="xs">
             <ThemeToggle />
-            <Button asChild variant="ghost">
+            <Button asChild variant="ghost" size="sm">
               <Link href="/auth/login">Login</Link>
             </Button>
-            <Button asChild>
+            <Button asChild size="sm">
               <Link href="/auth/sign-up">Get Started</Link>
             </Button>
           </Reveal>
+          {/* Mobile Menu */}
+          <div className="flex md:hidden items-center gap-2">
+            <ThemeToggle />
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden">
+                  <Menu className="h-5 w-5" />
+                  <span className="sr-only">Toggle menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+                <nav className="flex flex-col gap-4 mt-8">
+                  <Link 
+                    href="#features" 
+                    className="block px-2 py-2 text-lg font-medium transition-colors hover:text-primary"
+                  >
+                    Platform
+                  </Link>
+                  <Link 
+                    href="#pillars" 
+                    className="block px-2 py-2 text-lg font-medium transition-colors hover:text-primary"
+                  >
+                    Solutions
+                  </Link>
+                  <Link 
+                    href="#workflow" 
+                    className="block px-2 py-2 text-lg font-medium transition-colors hover:text-primary"
+                  >
+                    How it works
+                  </Link>
+                  <Link 
+                    href="#impact" 
+                    className="block px-2 py-2 text-lg font-medium transition-colors hover:text-primary"
+                  >
+                    Impact
+                  </Link>
+                  <div className="mt-4 flex flex-col gap-2">
+                    <Button asChild variant="outline" className="w-full">
+                      <Link href="/auth/login">Login</Link>
+                    </Button>
+                    <Button asChild className="w-full">
+                      <Link href="/auth/sign-up">Get Started</Link>
+                    </Button>
+                  </div>
+                </nav>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
       </header>
 
@@ -273,31 +323,31 @@ export default function HomePage() {
                     Empowering frontline healthcare in India
                   </Badge>
                 </Reveal>
-                <Reveal as="h1" className="text-balance text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl" variant="down">
+                <Reveal as="h1" className="text-balance text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl" variant="down">
                   Transform healthcare workforce readiness with precise AI guidance
                 </Reveal>
-                <Reveal as="p" className="text-pretty text-lg leading-relaxed text-muted-foreground" delay="xs">
+                <Reveal as="p" className="text-pretty text-base sm:text-lg leading-relaxed text-muted-foreground" delay="xs">
                   MedReady AI unifies adaptive training, operational command, and deployment intelligence so every community clinic delivers safe, reliable care—no matter the postcode.
                 </Reveal>
                 <Reveal as="div" className="flex flex-col gap-3 sm:flex-row sm:items-center" delay="sm">
-                  <Button asChild size="lg" className="text-base">
-                    <Link href="/auth/sign-up" className="flex items-center gap-2">
+                  <Button asChild size="lg" className="w-full sm:w-auto text-base">
+                    <Link href="/auth/sign-up" className="flex items-center justify-center gap-2">
                       Start free pilot
                       <ArrowRight className="size-4" />
                     </Link>
                   </Button>
-                  <Button asChild size="lg" variant="outline" className="text-base">
+                  <Button asChild size="lg" variant="outline" className="w-full sm:w-auto text-base">
                     <Link href="#workflow">See how it works</Link>
                   </Button>
                 </Reveal>
-                <Reveal as="ul" className="grid gap-4 sm:grid-cols-2" delay="md">
+                <Reveal as="ul" className="grid gap-3 sm:gap-4 sm:grid-cols-2" delay="md">
                   {heroHighlights.map(({ title, description, icon: Icon }) => (
-                    <li key={title} className="rounded-lg border border-border bg-background p-4">
-                      <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <li key={title} className="rounded-lg border border-border bg-background p-3 sm:p-4">
+                      <div className="mb-2 sm:mb-3 inline-flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
                         <Icon className="size-4" />
                       </div>
-                      <p className="font-semibold leading-snug text-foreground">{title}</p>
-                      <p className="mt-2 text-sm text-muted-foreground">{description}</p>
+                      <p className="text-sm sm:text-base font-semibold leading-snug text-foreground">{title}</p>
+                      <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-muted-foreground">{description}</p>
                     </li>
                   ))}
                 </Reveal>
@@ -305,29 +355,29 @@ export default function HomePage() {
 
               <Reveal className="landing-hero-panel" variant="left" delay="sm">
                 <div className="space-y-2">
-                  <p className="text-sm font-semibold uppercase tracking-wider text-primary">AI command snapshot</p>
-                  <h2 className="text-2xl font-semibold tracking-tight text-foreground">Live readiness across your districts</h2>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-primary">AI command snapshot</p>
+                  <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground">Live readiness across your districts</h2>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
                     Daily insights highlight critical gaps, successful interventions, and opportunities for rapid reinforcement.
                   </p>
                 </div>
-                <div className="space-y-5">
+                <div className="space-y-3 sm:space-y-5">
                   {heroSnapshot.map(({ title, value, trend, icon: Icon, accent }) => (
-                    <div key={title} className="flex items-start justify-between rounded-lg border border-border bg-card p-4">
+                    <div key={title} className="flex items-start justify-between rounded-lg border border-border bg-card p-3 sm:p-4">
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">{title}</p>
-                        <p className="mt-1 text-lg font-semibold text-foreground">{value}</p>
+                        <p className="text-xs sm:text-sm font-medium text-muted-foreground">{title}</p>
+                        <p className="mt-1 text-base sm:text-lg font-semibold text-foreground">{value}</p>
                       </div>
-                      <div className={cn("flex items-center gap-2 text-sm font-medium", accent)}>
-                        <Icon className="size-4" />
-                        {trend}
+                      <div className={cn("flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium", accent)}>
+                        <Icon className="size-3 sm:size-4" />
+                        <span className="hidden sm:inline">{trend}</span>
                       </div>
                     </div>
                   ))}
                 </div>
-                <div className="rounded-2xl border border-dashed border-primary/40 bg-primary/10 p-5 text-primary">
-                  <p className="text-sm font-semibold uppercase tracking-wide">Smart Deployment</p>
-                  <p className="mt-2 text-sm text-primary/80">
+                <div className="rounded-2xl border border-dashed border-primary/40 bg-primary/10 p-4 sm:p-5 text-primary">
+                  <p className="text-xs sm:text-sm font-semibold uppercase tracking-wide">Smart Deployment</p>
+                  <p className="mt-2 text-xs sm:text-sm text-primary/80">
                     AI-powered matching ensures the right healthcare workers reach communities that need them most.
                   </p>
                 </div>
@@ -504,11 +554,11 @@ export default function HomePage() {
         </section>
       </main>
 
-      <footer className="border-t border-border bg-muted/50 py-8">
+      <footer className="border-t border-border bg-muted/50 py-6 sm:py-8">
         <div className="landing-section">
           <Reveal className="flex flex-col gap-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between" variant="up">
-            <p>© 2025 MedReady AI. Built for MumbaiHacks 2025.</p>
-            <div className="flex flex-wrap items-center gap-4">
+            <p className="text-center sm:text-left">© 2025 MedReady AI. Built for MumbaiHacks 2025.</p>
+            <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 sm:gap-4">
               <Link href="#features" className="transition-colors hover:text-foreground">
                 Platform
               </Link>

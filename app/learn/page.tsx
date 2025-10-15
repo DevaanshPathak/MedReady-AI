@@ -30,20 +30,20 @@ export default async function LearnPage() {
   return (
     <div className="min-h-screen bg-background">
       <DashboardNav />
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <Reveal as="h1" className="text-3xl font-bold tracking-tight" variant="down">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        <div className="mb-6 sm:mb-8">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <Reveal as="h1" className="text-2xl sm:text-3xl font-bold tracking-tight" variant="down">
                 Learning Modules
               </Reveal>
-              <Reveal as="p" className="text-muted-foreground" delay="xs">
+              <Reveal as="p" className="text-sm sm:text-base text-muted-foreground mt-1" delay="xs">
                 Explore courses designed for healthcare professionals
               </Reveal>
             </div>
-            <Reveal variant="scale" delay="sm">
-              <Button asChild variant="outline">
-                <Link href="/learn/history">
+            <Reveal variant="scale" delay="sm" className="flex-shrink-0">
+              <Button asChild variant="outline" size="sm">
+                <Link href="/learn/history" className="whitespace-nowrap">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"
@@ -52,12 +52,13 @@ export default async function LearnPage() {
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className="mr-2 h-4 w-4"
+                    className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4"
                   >
                     <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
                     <path d="M3 3v5h5" />
                   </svg>
-                  Assessment History
+                  <span className="hidden sm:inline">Assessment History</span>
+                  <span className="sm:hidden">History</span>
                 </Link>
               </Button>
             </Reveal>
@@ -65,26 +66,26 @@ export default async function LearnPage() {
         </div>
 
         {/* Filter/Category Section */}
-        <Reveal className="mb-6 flex flex-wrap gap-2" variant="scale" delay="sm">
-          <Badge variant="outline" className="cursor-pointer hover:bg-accent">
+        <Reveal className="mb-4 sm:mb-6 flex flex-wrap gap-1.5 sm:gap-2" variant="scale" delay="sm">
+          <Badge variant="outline" className="cursor-pointer hover:bg-accent text-xs sm:text-sm">
             All Modules
           </Badge>
-          <Badge variant="outline" className="cursor-pointer hover:bg-accent">
+          <Badge variant="outline" className="cursor-pointer hover:bg-accent text-xs sm:text-sm">
             Emergency Care
           </Badge>
-          <Badge variant="outline" className="cursor-pointer hover:bg-accent">
+          <Badge variant="outline" className="cursor-pointer hover:bg-accent text-xs sm:text-sm">
             Primary Care
           </Badge>
-          <Badge variant="outline" className="cursor-pointer hover:bg-accent">
+          <Badge variant="outline" className="cursor-pointer hover:bg-accent text-xs sm:text-sm">
             Maternal Health
           </Badge>
-          <Badge variant="outline" className="cursor-pointer hover:bg-accent">
+          <Badge variant="outline" className="cursor-pointer hover:bg-accent text-xs sm:text-sm">
             Infectious Diseases
           </Badge>
         </Reveal>
 
         {/* Modules Grid */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
           {modules && modules.length > 0 ? (
             modules.map((module, index) => {
               const progress = progressMap.get(module.id)

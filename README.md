@@ -433,7 +433,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Issues**: [GitHub Issues](https://github.com/DevaanshPathak/MedReady-AI/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/DevaanshPathak/MedReady-AI/discussions)
-- **Email**: devaanshpathak@example.com (update with real email)
+- **Email**: devaanshpathak08@gmail.com || akshatsingh14372@gmail.com
 
 ---
 

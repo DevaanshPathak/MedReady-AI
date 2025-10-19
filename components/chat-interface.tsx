@@ -5,6 +5,7 @@ import type React from "react"
 import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { createClient } from "@/lib/supabase/client"
@@ -437,6 +438,17 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
 
     await sendMessage(input)
     setInput("") // Clear input after sending
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Submit on Enter (without Shift)
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      if (input.trim() && !isLoading) {
+        handleFormSubmit()
+      }
+    }
+    // Allow Shift+Enter for new line (default textarea behavior)
   }
 
   // Custom components for enhanced markdown rendering
@@ -987,14 +999,16 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
         {/* Input Area */}
         <div className="border-t bg-background">
           <div className="px-3 sm:px-6 py-3 sm:py-4">
-            <form onSubmit={handleFormSubmit} className="flex gap-2 sm:gap-3">
+            <form onSubmit={handleFormSubmit} className="flex gap-2 sm:gap-3 items-end">
               <div className="flex-1 relative">
-                <Input
+                <Textarea
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask a medical question..."
+                  onKeyDown={handleKeyDown}
+                  placeholder="Ask a medical question... (Shift+Enter for new line)"
                   disabled={isLoading}
-                  className="h-10 sm:h-11 text-sm sm:text-base"
+                  className="min-h-[2.5rem] max-h-[200px] text-sm sm:text-base resize-none"
+                  rows={1}
                 />
               </div>
               
@@ -1012,7 +1026,7 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
                 <Button 
                   type="submit" 
                   disabled={isLoading || !input.trim()}
-                  className="h-10 sm:h-11 px-3 sm:px-4"
+                  className="h-10 sm:h-11 px-3 sm:px-4 mb-1"
                   size="icon"
                 >
                   {isLoading ? (

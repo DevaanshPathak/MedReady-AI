@@ -79,7 +79,7 @@ This comprehensive test suite covers all the advanced learning features describe
 - **Performance**: Tests large dataset handling and pagination
 - **Data Consistency**: Tests concurrent operations and data integrity
 
-## Test Coverage
+### Test Coverage
 
 ### Features Covered ✅
 - ✅ Spaced Repetition Algorithm
@@ -91,6 +91,16 @@ This comprehensive test suite covers all the advanced learning features describe
 - ✅ ProgressSocial Component
 - ✅ Database Functions and RLS
 - ✅ Integration Workflows
+- ✅ Certificate Generation & Blockchain
+- ✅ Certificate Verification
+- ✅ Emergency Guidance AI
+- ✅ Gamification System
+- ✅ Study Streaks
+- ✅ AI Recommendations
+- ✅ Deployment Recommendations
+- ✅ Module Content Generation
+- ✅ Weak Areas Analysis
+- ✅ End-to-End User Workflows
 
 ### Test Types
 - **Unit Tests**: Individual function and component testing
@@ -110,18 +120,27 @@ This comprehensive test suite covers all the advanced learning features describe
 
 ```bash
 # Run all tests
-npm test
+pnpm test
 
 # Run specific test suites
-npm test -- --testPathPattern=spaced-repetition
-npm test -- --testPathPattern=assessment-quiz-enhanced
-npm test -- --testPathPattern=integration
+pnpm test -- --testPathPattern=spaced-repetition
+pnpm test -- --testPathPattern=assessment-quiz-enhanced
+pnpm test -- --testPathPattern=integration
+pnpm test -- --testPathPattern=api
+pnpm test -- --testPathPattern=certificate
+pnpm test -- --testPathPattern=gamification
 
 # Run with coverage
-npm test -- --coverage
+pnpm test:coverage
 
 # Run in watch mode
-npm test -- --watch
+pnpm test:watch
+
+# Run specific API tests
+pnpm test -- --testPathPattern=api/generate-certificate
+pnpm test -- --testPathPattern=api/emergency-guidance
+pnpm test -- --testPathPattern=api/streaks
+pnpm test -- --testPathPattern=api/recommendations
 ```
 
 ## Test Data

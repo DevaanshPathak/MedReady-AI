@@ -182,59 +182,9 @@ Format responses clearly with:
 
     const result = streamText(streamOptions)
 
-    // Return the streaming response with onFinish callback for saving
+    // Return the streaming response (message saving handled in client)
     return result.toUIMessageStreamResponse({
       originalMessages: messages,
-      onFinish: async ({ messages: finalMessages }) => {
-        try {
-          // Get or create session
-          let activeSessionId = sessionId
-          if (!activeSessionId) {
-            const { data: session } = await supabase
-              .from("chat_sessions")
-              .select("id")
-              .eq("user_id", userId)
-              .order("created_at", { ascending: false })
-              .limit(1)
-              .single()
-
-            activeSessionId = session?.id
-            if (!activeSessionId) {
-              const { data: newSession } = await supabase
-                .from("chat_sessions")
-                .insert({
-                  user_id: userId,
-                  title: "New Chat",
-                })
-                .select("id")
-                .single()
-              activeSessionId = newSession?.id
-            }
-          }
-
-          // Save all messages
-          if (activeSessionId && finalMessages) {
-            for (const message of finalMessages) {
-              // Extract text content from message parts
-              const textContent = message.parts
-                ?.filter((part: any) => part.type === 'text')
-                .map((part: any) => part.text)
-                .join('\n') || ''
-              
-              if (textContent) {
-                await supabase.from("chat_messages").insert({
-                  session_id: activeSessionId,
-                  role: message.role,
-                  content: textContent,
-                })
-              }
-            }
-            console.log("Successfully saved messages to database")
-          }
-        } catch (error) {
-          console.error("Error saving messages to database:", error)
-        }
-      }
     })
 
   } catch (error) {

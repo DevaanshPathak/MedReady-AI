@@ -286,6 +286,7 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
       const decoder = new TextDecoder()
       let buffer = ""
       let currentToolCall: any = null
+      let fullAssistantContent = "" // Track the full assistant message content
 
       const processChunk = (chunkText: string) => {
         buffer += chunkText
@@ -300,6 +301,7 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
             const evt = JSON.parse(jsonStr)
             // Handle AI SDK data stream event types
             if (evt.type === 'text-delta' && typeof evt.delta === 'string') {
+              fullAssistantContent += evt.delta // Accumulate content
               setConversation(prev => prev.map(m => 
                 m.id === assistantId ? { ...m, content: m.content + evt.delta } : m
               ))
@@ -349,6 +351,20 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
         if (done) break
         const chunk = decoder.decode(value, { stream: true })
         processChunk(chunk)
+      }
+
+      // Save the complete assistant message to database after streaming completes
+      if (fullAssistantContent && sessionId) {
+        try {
+          await supabase.from("chat_messages").insert({
+            session_id: sessionId,
+            role: "assistant",
+            content: fullAssistantContent,
+          })
+          console.log("Saved assistant message to database:", fullAssistantContent.length, "characters")
+        } catch (error) {
+          console.error("Error saving assistant message:", error)
+        }
       }
 
       // Update session metadata and generate title if this is the first message
@@ -512,35 +528,60 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
   }
 
   // Component to display thinking process
-  const ThinkingBlock = ({ thinking }: { thinking: string }) => {
-    const [isExpanded, setIsExpanded] = useState(false)
+  const ThinkingBlock = ({ thinking, isStreaming }: { thinking: string; isStreaming?: boolean }) => {
+    const [isExpanded, setIsExpanded] = useState(true) // Default to expanded to show reasoning
     
     return (
-      <div className="my-2 overflow-hidden rounded-md border border-border bg-muted/50">
+      <div className="my-3 overflow-hidden rounded-lg border-2 border-purple-500/30 bg-purple-50/50 dark:bg-purple-950/20 shadow-sm">
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="flex w-full items-center justify-between px-3 py-2 text-sm hover:bg-muted transition-colors"
+          className="flex w-full items-center justify-between px-4 py-3 text-sm hover:bg-purple-100/50 dark:hover:bg-purple-900/30 transition-colors"
         >
-          <div className="flex items-center gap-2">
-            <svg className="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-            </svg>
-            <span className="font-medium text-foreground">Thinking Process</span>
+          <div className="flex items-center gap-3">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-purple-500/20">
+              <svg className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
+            </div>
+            <div className="text-left">
+              <div className="font-semibold text-purple-700 dark:text-purple-300 flex items-center gap-2">
+                Extended Thinking
+                {isStreaming && (
+                  <span className="flex items-center gap-1 text-xs font-normal text-purple-600 dark:text-purple-400">
+                    <span className="h-1.5 w-1.5 rounded-full bg-purple-600 animate-pulse" />
+                    Reasoning...
+                  </span>
+                )}
+              </div>
+              <div className="text-xs text-purple-600/70 dark:text-purple-400/70 mt-0.5">
+                Claude's step-by-step reasoning process
+              </div>
+            </div>
           </div>
           
-          <svg
-            className={`h-4 w-4 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-purple-600/60 dark:text-purple-400/60 font-medium">
+              {thinking.length} chars
+            </span>
+            <svg
+              className={`h-4 w-4 text-purple-600 dark:text-purple-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
         </button>
         {isExpanded && (
-          <div className="border-t border-border bg-background px-3 py-2">
-            <div className="text-xs text-muted-foreground whitespace-pre-wrap font-mono leading-relaxed">
-              {thinking}
+          <div className="border-t border-purple-500/20 bg-white dark:bg-gray-950">
+            <div className="px-4 py-3 max-h-96 overflow-y-auto">
+              <div className="text-sm text-purple-900 dark:text-purple-100 whitespace-pre-wrap font-mono leading-relaxed">
+                {thinking || <span className="text-purple-500/50 italic">No reasoning captured yet...</span>}
+                {isStreaming && (
+                  <span className="inline-block w-1.5 h-4 ml-0.5 bg-purple-600 dark:bg-purple-400 animate-pulse" />
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -550,42 +591,56 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
 
   // Component to display tool calls
   const ToolCallsBlock = ({ toolCalls }: { toolCalls: Array<{ toolName: string; args: any; result?: any; timestamp: string }> }) => {
-    const [expandedIndex, setExpandedIndex] = useState<number | null>(null)
+    const [expandedIndex, setExpandedIndex] = useState<number | null>(0) // Default first item expanded
     
     return (
-      <div className="my-2 space-y-2">
+      <div className="my-3 space-y-2">
         {toolCalls.map((tool, index) => {
           const isSearching = !tool.result
           const searchResults = Array.isArray(tool.result) ? tool.result : []
           
           return (
-            <div key={index} className="overflow-hidden rounded-md border border-border bg-muted/50">
+            <div key={index} className="overflow-hidden rounded-lg border-2 border-blue-500/30 bg-blue-50/50 dark:bg-blue-950/20 shadow-sm">
               <button
                 onClick={() => setExpandedIndex(expandedIndex === index ? null : index)}
-                className="flex w-full items-center justify-between px-3 py-2 text-sm hover:bg-muted transition-colors"
+                className="flex w-full items-center justify-between px-4 py-3 text-sm hover:bg-blue-100/50 dark:hover:bg-blue-900/30 transition-colors"
               >
-                <div className="flex items-center gap-2">
-                  <svg className="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-500/20">
+                    {isSearching ? (
+                      <svg className="h-4 w-4 text-blue-600 dark:text-blue-400 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                    ) : (
+                      <svg className="h-4 w-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    )}
+                  </div>
                   
                   <div className="text-left">
-                    <div className="font-medium text-foreground flex items-center gap-2">
+                    <div className="font-semibold text-blue-700 dark:text-blue-300 flex items-center gap-2">
                       {tool.toolName === 'medicalWebSearch' ? 'Medical Web Search' : tool.toolName}
                       {!isSearching && searchResults.length > 0 && (
-                        <span className="text-xs font-normal text-muted-foreground">
-                          ({searchResults.length})
+                        <span className="px-2 py-0.5 text-xs font-medium bg-blue-500/20 text-blue-700 dark:text-blue-300 rounded-full">
+                          {searchResults.length} {searchResults.length === 1 ? 'source' : 'sources'}
+                        </span>
+                      )}
+                      {isSearching && (
+                        <span className="flex items-center gap-1 text-xs font-normal text-blue-600 dark:text-blue-400">
+                          <span className="h-1.5 w-1.5 rounded-full bg-blue-600 animate-pulse" />
+                          Searching...
                         </span>
                       )}
                     </div>
-                    <div className="text-xs text-muted-foreground mt-0.5">
-                      {tool.args?.query || 'Searching...'}
+                    <div className="text-xs text-blue-600/70 dark:text-blue-400/70 mt-0.5">
+                      {typeof tool.args?.query === 'string' ? tool.args.query : 'Querying medical databases...'}
                     </div>
                   </div>
                 </div>
                 
                 <svg
-                  className={`h-4 w-4 text-muted-foreground transition-transform ${expandedIndex === index ? 'rotate-180' : ''}`}
+                  className={`h-4 w-4 text-blue-600 dark:text-blue-400 transition-transform ${expandedIndex === index ? 'rotate-180' : ''}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -595,18 +650,18 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
               </button>
               
               {expandedIndex === index && tool.result && (
-                <div className="border-t border-border bg-background">
-                  <div className="px-3 py-2 space-y-2">
+                <div className="border-t border-blue-500/20 bg-white dark:bg-gray-950">
+                  <div className="px-4 py-3 space-y-3 max-h-96 overflow-y-auto">
                     {searchResults.length > 0 ? (
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         {searchResults.map((item: any, i: number) => (
-                          <div key={i} className="p-2 rounded-md border border-border hover:border-muted-foreground/30 transition-colors">
-                            <div className="flex items-start justify-between gap-2 mb-1">
-                              <h4 className="font-medium text-xs text-foreground flex-1">
+                          <div key={i} className="p-3 rounded-lg border border-blue-200 dark:border-blue-800 bg-white dark:bg-gray-900 hover:border-blue-400 dark:hover:border-blue-600 transition-colors">
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <h4 className="font-semibold text-sm text-blue-900 dark:text-blue-100 flex-1 leading-tight">
                                 {item.title}
                               </h4>
                               {item.publishedDate && (
-                                <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                <span className="px-2 py-0.5 text-xs bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded whitespace-nowrap">
                                   {new Date(item.publishedDate).toLocaleDateString()}
                                 </span>
                               )}
@@ -615,21 +670,27 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
                               href={item.url} 
                               target="_blank" 
                               rel="noopener noreferrer"
-                              className="text-xs text-primary hover:underline flex items-center gap-1 mb-1"
+                              className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 hover:underline flex items-center gap-1 mb-2 break-all"
                             >
-                              <span className="truncate max-w-md">{item.url}</span>
+                              <svg className="h-3 w-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
+                              {item.url}
                             </a>
                             {item.content && (
-                              <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
-                                {item.content.slice(0, 150)}{item.content.length > 150 ? '...' : ''}
+                              <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
+                                {item.content.slice(0, 200)}{item.content.length > 200 ? '...' : ''}
                               </p>
                             )}
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-2 text-xs text-muted-foreground">
-                        No results found
+                      <div className="text-center py-4">
+                        <svg className="h-8 w-8 mx-auto text-blue-400 dark:text-blue-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M12 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p className="text-sm text-blue-600 dark:text-blue-400">No results found</p>
                       </div>
                     )}
                   </div>
@@ -869,7 +930,10 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
                   >
                     {/* Display thinking if available (only for assistant) */}
                     {message.role === "assistant" && message.thinking && (
-                      <ThinkingBlock thinking={message.thinking} />
+                      <ThinkingBlock 
+                        thinking={message.thinking} 
+                        isStreaming={isStreaming && idx === conversation.length - 1}
+                      />
                     )}
                     
                     {/* Display tool calls if available (only for assistant) */}
@@ -940,7 +1004,7 @@ export function ChatInterface({ userId, profile, initialMessages, initialSession
                             ),
                           }}
                         >
-                          {message.content}
+                          {String(message.content || '')}
                         </ReactMarkdown>
                         {/* Show typing cursor for streaming assistant messages */}
                         {message.role === "assistant" && isStreaming && idx === conversation.length - 1 && (
